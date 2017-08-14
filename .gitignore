@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Image Dumps from programs (allow PNGs for readme/wiki)
+*.ppm
+*.tga
