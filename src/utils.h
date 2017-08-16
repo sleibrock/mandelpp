@@ -16,18 +16,25 @@
 #include <getopt.h>
 
 #define PROGRAM_VERSION        0.1
+#define NUM_COMMANDS            10
 #define RESOLUTION_COUNT        13
 #define ASCII_LINES              9
 #define DEFAULT_ZOOM           1.0
 #define DEFAULT_RE             0.0
 #define DEFAULT_IM             0.0
 
-//////////////////////////////////////////////////////// BEGIN RESOLUTION DATA SECTION
+
+//////////////////////////////////////////////////////// BEGIN CLASS/STRUCT DEFS
+// the resolution struct that contains output size info
 typedef struct reso_t {
     const char*  name;
     const unsigned int width;
     const unsigned int height;
 } reso_t;
+
+//////////////////////////////////////////////////////// END STRUCT TYPEDEFS
+
+//////////////////////////////////////////////////////// BEGIN RESOLUTION DATA SECTION
 
 static reso_t all_resolutions[RESOLUTION_COUNT] = {
     // standard resolution outputs
@@ -67,22 +74,6 @@ static const char* ascii_art[ASCII_LINES] = {
     "------------------*------",
 };
 
-/*
- * Print out help info for the program
- */
-void print_info()
-{
-    for(unsigned int i=0; i < ASCII_LINES; i++)
-        std::cout << ascii_art[i] << std::endl;
-
-
-    std::cout << "Mandelbrot program, version: " << PROGRAM_VERSION << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Help: " << std::endl;
-    std::cout << "-s, --size=<string>    set the image render size" << std::endl;
-}
-
 void print_supported_resolutions()
 {
     std::cout << "Supported resolutions list: " << std::endl << std::endl;
@@ -105,21 +96,68 @@ public:
     // char* fname;
     reso_t*  output_res;
 
-    void display_info();
+    Settings(unsigned int v, unsigned int cm, double ir, double ii, double z, reso_t* out)
+    {
+        verbose = v;
+        color_map = cm;
+        init_real = ir;
+        init_imag = ii;
+        zoom = z;
+        output_res = out;
+    }
+
+    void display_info()
+    {
+        if(!verbose)
+            return;
+
+        // print some basic stuff
+        std::cout << "Target resolution: " << output_res->width 
+            << "x" << output_res->height << std::endl;
+        std::cout << "Desired point: " << init_real << ", " << init_imag << "j" << std::endl;
+        std::cout << "Magnification: " << zoom << std::endl;
+    };
 };
 
 // getopt_long arguments
-static struct option long_options[] = {
+// 0 - no_arg, 1 - mandatory, 2 - arg required
+static struct option long_options[NUM_COMMANDS] = {
     {"size",    2,    0, 's'},
     {"real",    2,    0, 'r'},
     {"imag",    2,    0, 'i'},
     {"output",  2,    0, 'o'},
     {"colors",  2,    0, 'c'},
     {"zoom",    2,    0, 'z'},
+    {"random",  0,    0, 'r'},
     {"verbose", 0,    0, 'v'},
     {"help",    0,    0, 'h'},
     {NULL,      0, NULL,   0}
 };
+
+static const char* option_help[NUM_COMMANDS] = {
+    "sets the target resolution of the render",
+    "sets the initial real value to use",
+    "sets the initial imaginary value to use",
+    "tell the program what name to use for the output file",
+    "informs the program what color map to use",
+    "sets the zoom level",
+    "selects random coordinates and magnification",
+    "the program will display more text during runtime",
+    "shows this help screen",
+    "",
+};
+
+void print_help_info()
+{
+    for(unsigned int a=0; a < ASCII_LINES; a++)
+        std::cout << ascii_art[a] << std::endl;
+
+    std::cout << std::endl << "Commands: " << std::endl;
+    for(unsigned int c=0; c < NUM_COMMANDS-1; c++)
+    {
+        std::cout << "  --" << long_options[c].name << "  " << option_help[c] << std::endl; 
+    }
+}
 
 /*
  * get the program render settings from getopt_long
@@ -134,10 +172,11 @@ Settings* get_render_settings(int argc, char** argv)
     // values to use in the struct
     unsigned int verbose      =   0;
     unsigned int color        =   0;
+    unsigned int random       =   0;
     double magnification      = 0.0;
     double init_real          = 0.0;
     double init_imag          = 0.0;
-    char*  fname; //strmcpy to this address from the getopt loop
+    //char*  fname; //strmcpy to this address from the getopt loop
     reso_t* selected_reso     = &all_resolutions[0];
     while ((c = getopt_long(argc, argv, "s:r:i:o:c:z:vh",
                             long_options, &option_index)) != -1)
@@ -147,7 +186,7 @@ Settings* get_render_settings(int argc, char** argv)
                 verbose = 1;
                 break;
             case 'h':
-                print_info();
+                print_help_info();
                 exit(0);      // exit here because we can't return-exit
                 break;
             case 's':
@@ -183,9 +222,14 @@ Settings* get_render_settings(int argc, char** argv)
                     exit(4);
                 }
                 break;
+            
+
+            case 'r': // enable random point/zoom (overrides given coords)
+                random = 1;
+                break;
         }
 
-    return new Settings();
+    return new Settings(verbose, color, init_real, init_imag, magnification, selected_reso);
     // done handling getopts
 }
 

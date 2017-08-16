@@ -20,6 +20,8 @@
  */
 int render(Settings* settings)
 {
+    settings->display_info();
+
     // open up a file stream and allocate the file header
     std::ofstream ofs("./mandel.ppm", std::ios::out | std::ios::binary);
     ofs << "P6\n";
@@ -35,28 +37,12 @@ int render(Settings* settings)
     // z values to mutate for iteration
     double z_re, z_re2;
     double z_im, z_im2;
+
+    // width-to-height ratio
+    // the x will always be more than the y
+    // so for a widescreen, the render box should be (0,0) to (ratio, 1)
+    double ratio = settings->output_res->width / settings->output_res->height;
     
-    
-    if(settings->verbose)
-    {
-        std::cout << "===================================" << std::endl;
-        std::cout << "|       Mandelbrot Program        |" << std::endl;
-        std::cout << "===================================" << std::endl;
-        std::cout << std::endl;
-
-        std::cout << "Target resolution: " << settings->output_res->width 
-            << "x" << settings->output_res->height << std::endl;
-        std::cout << std::endl;
-
-        //std::cout << "Desired point: " << init_re << ", " << init_im << std::endl;
-        //std::cout << "Magnification: " << magnification << std::endl;
-        //std::cout << "Top-left point: " << top_x << ", " << top_y << std::endl;
-        std::cout << "Increment: " << inc << std::endl;
-
-        std::cout << std::endl;
-        std::cout << "Beginning iteration ... " << std::endl;
-    }
-
     unsigned char iter;
     for(unsigned int y=0; y < settings->output_res->height; y++)
     {
@@ -83,13 +69,8 @@ int render(Settings* settings)
 
 int main(int argc, char **argv)
 {
-    std::cout << "Breaking program" << std::endl;
     Settings* render_settings;
     render_settings = get_render_settings(argc, argv);
-    std::cout << "Passing to render stage" << std::endl;
-
     render(render_settings);
-
-    // exit
     return 0;
 }
