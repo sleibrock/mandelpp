@@ -14,27 +14,25 @@
 #include <iostream>
 #include <stdlib.h>
 #include <getopt.h>
+#include <math.h>
+#include <string.h>
 
 #define PROGRAM_VERSION        0.1
 #define NUM_COMMANDS            10
 #define RESOLUTION_COUNT        13
 #define ASCII_LINES              9
-#define DEFAULT_ZOOM           1.0
-#define DEFAULT_RE             0.0
+#define DEFAULT_ZOOM           0.5
+#define DEFAULT_RE            -0.7
 #define DEFAULT_IM             0.0
 
 
-//////////////////////////////////////////////////////// BEGIN CLASS/STRUCT DEFS
+//////////////////////////////////////////////////////// BEGIN CLASS/STRUCT/ARR DEFS
 // the resolution struct that contains output size info
 typedef struct reso_t {
     const char*  name;
     const unsigned int width;
     const unsigned int height;
 } reso_t;
-
-//////////////////////////////////////////////////////// END STRUCT TYPEDEFS
-
-//////////////////////////////////////////////////////// BEGIN RESOLUTION DATA SECTION
 
 static reso_t all_resolutions[RESOLUTION_COUNT] = {
     // standard resolution outputs
@@ -57,74 +55,25 @@ static reso_t all_resolutions[RESOLUTION_COUNT] = {
     {"instagram", 1024,    768},
 
 };
-/////////////////////////////////////////////////////// END RESOLUTION DATA SECTION
 
-
-/////////////////////////////////////////////////////// BEGIN HELP INFO SECTION
-// print out a really terrible hand-made Mandelbrot set
 static const char* ascii_art[ASCII_LINES] = {
     "------------------*------",
     "---------------******----",
     "--------*-----********---",
-    "----*--***--**********--",
+    "----*--***--**********---",
     "--*******************----",
-    "----*--***--**********--",
+    "----*--***--**********---",
     "--------*----*********---",
     "--------------*******----",
     "------------------*------",
-};
-
-void print_supported_resolutions()
-{
-    std::cout << "Supported resolutions list: " << std::endl << std::endl;
-    std::cout << "idk" << std::endl;
-};
-/////////////////////////////////////////////////////////// END HELP INFO SECTION
-
-
-/////////////////////////////////////////////////////////// BEGIN RENDER INFO SECTION
-// Class to contain render settings
-// all these represent options fetched from the getopt function
-class Settings
-{
-public:
-    unsigned int verbose;
-    unsigned int color_map;
-    double init_real;
-    double init_imag;
-    double zoom;
-    // char* fname;
-    reso_t*  output_res;
-
-    Settings(unsigned int v, unsigned int cm, double ir, double ii, double z, reso_t* out)
-    {
-        verbose = v;
-        color_map = cm;
-        init_real = ir;
-        init_imag = ii;
-        zoom = z;
-        output_res = out;
-    }
-
-    void display_info()
-    {
-        if(!verbose)
-            return;
-
-        // print some basic stuff
-        std::cout << "Target resolution: " << output_res->width 
-            << "x" << output_res->height << std::endl;
-        std::cout << "Desired point: " << init_real << ", " << init_imag << "j" << std::endl;
-        std::cout << "Magnification: " << zoom << std::endl;
-    };
 };
 
 // getopt_long arguments
 // 0 - no_arg, 1 - mandatory, 2 - arg required
 static struct option long_options[NUM_COMMANDS] = {
     {"size",    2,    0, 's'},
-    {"real",    2,    0, 'r'},
-    {"imag",    2,    0, 'i'},
+    {"real",    2,    0, 'x'},
+    {"imag",    2,    0, 'y'},
     {"output",  2,    0, 'o'},
     {"colors",  2,    0, 'c'},
     {"zoom",    2,    0, 'z'},
@@ -147,6 +96,86 @@ static const char* option_help[NUM_COMMANDS] = {
     "",
 };
 
+class Settings
+{
+public:
+    unsigned char verbose;
+    unsigned char color_map;
+    unsigned char random;
+    double init_real;
+    double init_imag;
+    double zoom;
+    // char* fname;
+    reso_t*  res;
+
+    double span_x;
+    double span_y;
+    double topleft_x;
+    double topleft_y;
+    double botright_x;
+    double botright_y;
+
+    double inc_re;
+    double inc_im;
+
+    // constructor - do all the dimensional alignment/math here
+    Settings(unsigned char  v, unsigned char  r, 
+             unsigned char cm, double        ir,
+             double        ii, double         z,
+             reso_t* out)
+    {
+        verbose   =   v;
+        color_map =  cm;
+        random    =   r;
+        init_real =  ir;
+        init_imag =  ii;
+        zoom      =   z;
+        res       = out;
+
+        double w = double(res->width);
+        double h = double(res->height);
+        span_x = ((w/h) * 0.5) * (1.0 / zoom);
+        span_y = 0.5           * (1.0 / zoom);
+
+        topleft_x  = init_real - span_x;
+        topleft_y  = init_imag - span_y;
+        botright_x = init_real + span_x;
+        botright_y = init_imag + span_y;
+
+        inc_re = (fabs(topleft_x - botright_x)) * (1.0 / w);
+        inc_im = (fabs(topleft_y - botright_y)) * (1.0 / h);
+    }
+
+    void display_info()
+    {
+        if(!verbose)
+            return;
+
+        // print some basic stuff
+        if(random)
+        {
+            std::cout << "Random mode enabled!";
+        }
+
+        std::cout << "Target resolution: " << res->width << "x"  << res->height << std::endl;
+        std::cout << "Desired point: "     <<  init_real << ", " <<   init_imag << std::endl;
+        std::cout << "Spans: "             <<     span_x << ", " <<      span_y << std::endl;
+        std::cout << "Top left: "          <<  topleft_x << ", " <<   topleft_y << std::endl;
+        std::cout << "Bot right: "         << botright_x << ", " <<  botright_y << std::endl;
+        std::cout << "Increments: "        <<     inc_re << ", " <<      inc_im << std::endl;
+        std::cout << "Magnification: "     <<       zoom <<                        std::endl;
+
+    };
+};
+//////////////////////////////////////////////////////// END S/C/A DEFS
+
+/////////////////////////////////////////////////////// BEGIN HELP INFO SECTION
+void print_supported_resolutions()
+{
+    std::cout << "Supported resolutions list: " << std::endl << std::endl;
+    std::cout << "idk" << std::endl;
+};
+
 void print_help_info()
 {
     for(unsigned int a=0; a < ASCII_LINES; a++)
@@ -165,31 +194,40 @@ void print_help_info()
  */
 Settings* get_render_settings(int argc, char** argv)
 {
+    // values used during the getopts phase
     int c;
     int found        = 0;
     int option_index = 0;
 
-    // values to use in the struct
-    unsigned int verbose      =   0;
-    unsigned int color        =   0;
-    unsigned int random       =   0;
-    double magnification      = 0.0;
-    double init_real          = 0.0;
-    double init_imag          = 0.0;
+    // values to use in the struct (adjusted by the getopts args)
+    unsigned int verbose      =    0;
+    unsigned int color        =    0;
+    unsigned int random       =    0;
+    double magnification      = DEFAULT_ZOOM; // 0.5 will double the unit rect range
+    double init_real          = DEFAULT_RE;
+    double init_imag          = DEFAULT_IM;
     //char*  fname; //strmcpy to this address from the getopt loop
     reso_t* selected_reso     = &all_resolutions[0];
-    while ((c = getopt_long(argc, argv, "s:r:i:o:c:z:vh",
+
+    // begin getopts parsing
+    while ((c = getopt_long(argc, argv, "s:x:y:o:c:z:vhr",
                             long_options, &option_index)) != -1)
         switch(c)
         {
-            case 'v':
+            case 'v': // set the verbosity
                 verbose = 1;
                 break;
-            case 'h':
+
+            case 'h': // print help and quit
                 print_help_info();
                 exit(0);      // exit here because we can't return-exit
                 break;
-            case 's':
+
+            case 'r': // enable random point/zoom (overrides given coords)
+                random = 1;
+                break;
+
+            case 's': // set the resolution target
                 if(strlen(optarg) == 0)
                 {
                     std::cerr << "No size given" << std::endl;
@@ -206,30 +244,61 @@ Settings* get_render_settings(int argc, char** argv)
                 if(!found)
                 {
                     std::cerr << "Error: given resolution not supported" << std::endl;
-                    exit(2);
+                    exit(1);
                 }
                 break;
-            case 'z':
+
+            case 'x': // get the real value
                 if(strlen(optarg) == 0)
                 {
-                    std::cerr << "poop" << std::endl;
-                    exit(3);
+                    std::cerr << "Error: no real number supplied" << std::endl;
+                    exit(1);
+                }
+                init_real = atof(optarg); // can't errcheck because we accept sub-zero nums
+                break;
+
+            case 'y': // get the imag value
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "Error: no imaginary number supplied" << std::endl;
+                    exit(1);
+                }
+                init_imag = atof(optarg);
+                break;
+
+            case 'z': // get the zoom value
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "Error: no zoom value given" << std::endl;
+                    exit(1);
                 }
                 magnification = atof(optarg);
                 if(magnification <= 0.0)
                 {
                     std::cerr << "Error: negative or invalid zoom given" << std::endl;
-                    exit(4);
+                    exit(1);
+                }
+                break;
+              
+            case 'o': // get the file name to use
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "Error: no file path supplied" << std::endl;
+                    exit(1);
                 }
                 break;
             
-
-            case 'r': // enable random point/zoom (overrides given coords)
-                random = 1;
-                break;
         }
 
-    return new Settings(verbose, color, init_real, init_imag, magnification, selected_reso);
+    return new Settings(
+            verbose,
+            color,
+            random,
+            init_real,
+            init_imag,
+            magnification,
+            selected_reso
+    );
     // done handling getopts
 }
 

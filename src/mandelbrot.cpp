@@ -1,11 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <cstdint>
 #include <getopt.h>
-#include <stdlib.h>
-#include <string.h>
-#include <string>
-#include <math.h>
 
 // use GMP soon for ultra precision
 //#include <gmp.h>
@@ -13,51 +8,64 @@
 // project level includes
 #include "utils.h"
 
-#define MAX_ITERS              255
+#define MAX_ITERS   255
+#define THRESHOLD   4.0
 
 /*
- * render a mandelbrot set based on the settings_t var
+ * render a mandelbrot set based on the Settings* passed in
  */
 int render(Settings* settings)
 {
+    // just print out some info dawg
     settings->display_info();
+
+    // store local variables to avoid constant pointer accesses
+    double w       = settings->res->width;
+    double h       = settings->res->height;
+    double color   = settings->color_map;
 
     // open up a file stream and allocate the file header
     std::ofstream ofs("./mandel.ppm", std::ios::out | std::ios::binary);
     ofs << "P6\n";
     ofs << "#This is a mandelbrot image\n";
-    ofs << settings->output_res->width << " " << settings->output_res->height;
+    ofs << w << " " << h;
     ofs << "\n255\n";
-
-    double inc  = 0.01;
-    // constant C values
-    double c_re = settings->init_real;
-    double c_im = settings->init_imag;
 
     // z values to mutate for iteration
     double z_re, z_re2;
     double z_im, z_im2;
 
-    // width-to-height ratio
-    // the x will always be more than the y
-    // so for a widescreen, the render box should be (0,0) to (ratio, 1)
-    double ratio = settings->output_res->width / settings->output_res->height;
+    double init_re = settings->topleft_x; 
+    double init_im = settings->topleft_y;
+    double inc_re  = settings->inc_re;
+    double inc_im  = settings->inc_im;
+
+    double c_re = init_re; 
+    double c_im = init_im;
     
     unsigned char iter;
-    for(unsigned int y=0; y < settings->output_res->height; y++)
+    for(unsigned int y=0; y < h; y++)
     {
-        for(unsigned int x=0; x < settings->output_res->width; x++)
+        for(unsigned int x=0; x < w; x++)
         {
-            iter = 0;
+            iter  = 0;
+            z_re  = 0;
+            z_im  = 0;
+            z_re2 = 0;
+            z_im2 = 0;
 
-            while(0){
-                // mutate
+            while(z_re2 + z_im2 < THRESHOLD && iter++ < MAX_ITERS)
+            {
+                z_re2 = z_re * z_re;
+                z_im2 = z_im * z_im;
+                z_im  = (2.0 * z_re * z_im) + c_im;
+                z_re  = z_re2 - z_im2 + c_re;
             }
-            c_re += inc;
+            c_re += inc_re;
             ofs << iter << iter << iter;
         }
-        c_re = settings->init_real;
-        c_im += inc;
+        c_re = init_re;
+        c_im += inc_im;
     }
 
     ofs.close();
@@ -66,11 +74,15 @@ int render(Settings* settings)
     return 0;
 }
 
-
+/*
+ * The main function of the program
+ */
 int main(int argc, char **argv)
 {
     Settings* render_settings;
     render_settings = get_render_settings(argc, argv);
+
     render(render_settings);
+
     return 0;
 }
