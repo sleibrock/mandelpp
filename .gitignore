@@ -34,3 +34,6 @@
 # Image Dumps from programs (allow PNGs for readme/wiki)
 *.ppm
 *.tga
+
+# swap files
+*.swp

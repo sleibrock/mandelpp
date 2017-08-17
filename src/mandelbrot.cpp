@@ -6,7 +6,7 @@
 //#include <gmp.h>
 
 // project level includes
-#include "utils.h"
+#include "include/utils.h"
 
 #define MAX_ITERS   255
 #define THRESHOLD   4.0
