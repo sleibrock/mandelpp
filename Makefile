@@ -23,8 +23,10 @@ all: $(TARGET)
 
 build: $(TARGET)
 
+rebuild: clean build
+
 $(TARGET): $(OBJS)
-	@echo "[CLEAN] Linking '$(TARGET)' ..."
+	@echo "[BUILD] Linking '$(TARGET)' ..."
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) -o $(TARGET) $(LIBS)
 
 $(O)/%.o: $(S)/%.cpp | $(O)

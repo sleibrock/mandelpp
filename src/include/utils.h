@@ -20,7 +20,7 @@
 #define PROGRAM_VERSION        0.1
 #define NUM_COMMANDS            10
 #define RESOLUTION_COUNT        23
-#define COLOR_COUNT              2
+#define GRADIENT_COUNT           2
 #define ASCII_LINES              9
 #define DEFAULT_ZOOM           0.5
 #define DEFAULT_RE            -0.7
@@ -35,9 +35,24 @@ typedef struct reso_t {
     const unsigned int height;
 } reso_t;
 
+// a basic color triplet
+typedef struct color_t {
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+} color_t;
+
+// cubic interpolated gradient type
 typedef struct gradient_t {
-    
+    color_t a;
+    color_t b;
+    color_t c;
 } gradient_t;
+
+static gradient_t all_gradients[GRADIENT_COUNT] = {
+    {{0, 0, 0}, {127, 127, 127}, {255, 255, 255}}, 
+    {{0, 0, 0}, {255, 255, 255}, {  0,   0, 255}},
+};
 
 // Resolutions available to the program
 // Width must always be larger than height for landscape aspect

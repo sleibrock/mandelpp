@@ -1,5 +1,23 @@
-# mandelpp
-Mandelbrot Set Implementation in C++
+# Mandelbrot Set Generator
+
+A Mandelbrot Set rasterizing tool to output images of Mandelbrot Sets.
+
+Usage:
+```
+-h, --help     Print out these options
+-s, --size     Select a resolution size to use
+-x, --real     Set the initial real value
+-y, --imag     Set the initial imaginary value
+-c, --colors   Set which color gradient to use
+-z, --zoom     Set the zoom level
+-r, --random   Enable random point/zoom selection
+-v, --verbose  Program will print more text at runtime 
+```
+
+# Examples
+
+![](https://raw.githubusercontent.com/sleibrock/mandelpp/master/docs/whole_720.png)
+![](https://raw.githubusercontent.com/sleibrock/mandelpp/master/docs/closeup.png)
 
 # Downloading and Building
 
@@ -9,15 +27,10 @@ git clone https://github.com/sleibrock/mandelpp && cd mandelpp
 make
 ```
 
-For re-building the project (recompilation of older objects) use the rebuild command.
-```
-make rebuild
-```
-
 # Requirements
 
-Compiles and runs on the following:
+Compiles, tested and runs on the following:
 
 * GCC 5.3.0
 * Make 3.82.90
-* Windows, Linux
+* Windows 10, Linux 3.16
