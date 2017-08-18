@@ -20,7 +20,7 @@
 #define PROGRAM_VERSION        0.1
 #define NUM_COMMANDS            10
 #define RESOLUTION_COUNT        23
-#define GRADIENT_COUNT           2
+#define COLORMAP_COUNT           3
 #define ASCII_LINES              9
 #define DEFAULT_ZOOM           0.5
 #define DEFAULT_RE            -0.7
@@ -28,30 +28,29 @@
 
 
 //////////////////////////////////////////////////////// BEGIN CLASS/STRUCT/ARR DEFS
+// tiny integers used so much that it needs it's own typedef
+typedef unsigned char uchar;
+
 // the resolution struct that contains output size info
 typedef struct reso_t {
     const char*  name;
-    const unsigned int width;
-    const unsigned int height;
+    const uint32_t width;
+    const uint32_t height;
 } reso_t;
 
 // a basic color triplet
 typedef struct color_t {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
+    const char*   name;
+    const float      r;
+    const float      g;
+    const float      b;
 } color_t;
 
-// cubic interpolated gradient type
-typedef struct gradient_t {
-    color_t a;
-    color_t b;
-    color_t c;
-} gradient_t;
-
-static gradient_t all_gradients[GRADIENT_COUNT] = {
-    {{0, 0, 0}, {127, 127, 127}, {255, 255, 255}}, 
-    {{0, 0, 0}, {255, 255, 255}, {  0,   0, 255}},
+// colors to use (names are checked in getopts)
+static color_t all_colormaps[COLORMAP_COUNT] = {
+    {"red",       9.5,    0,    0},
+    {"blue",        0,    0,  9.0},
+    {"mix",       2.5,  7.5,  3.4},
 };
 
 // Resolutions available to the program
@@ -130,17 +129,43 @@ static const char* option_help[NUM_COMMANDS] = {
     "",
 };
 
+class Gradient
+{
+public:
+    float r;
+    float g;
+    float b;
+    Gradient(color_t* c): r(c->r), g(c->g), b(c->b) {};
+
+    uchar R(float t)
+    {
+        return (int)(r*(1-t)*t*t*t*255);
+        
+    };
+
+    uchar G(float t)
+    {
+        return (int)(g*(1-t)*(1-t)*t*t*255);
+
+    };
+
+    uchar B(float t)
+    {
+        return (int)(b*(1-t)*(1-t)*(1-t)*t*255);
+    };
+};
+
 class Settings
 {
 public:
     unsigned char verbose;
-    unsigned char color_map;
     unsigned char random;
     double init_real;
     double init_imag;
     double zoom;
     // char* fname;
     reso_t*  res;
+    Gradient* grad;
 
     double span_x;
     double span_y;
@@ -153,18 +178,17 @@ public:
     double inc_im;
 
     // constructor - do all the dimensional alignment/math here
-    Settings(unsigned char  v, unsigned char  r, 
-             unsigned char cm, double        ir,
-             double        ii, double         z,
-             reso_t* out)
+    Settings(uchar v, uchar r, double ir, double ii, double z,
+             reso_t* out, color_t* color_map)
     {
         verbose   =   v;
-        color_map =  cm;
         random    =   r;
         init_real =  ir;
         init_imag =  ii;
         zoom      =   z;
         res       = out;
+
+        grad      = new Gradient(color_map);
 
         double w = double(res->width);
         double h = double(res->height);
@@ -234,14 +258,15 @@ Settings* get_render_settings(int argc, char** argv)
     int option_index = 0;
 
     // values to use in the struct (adjusted by the getopts args)
-    unsigned int verbose      =    0;
-    unsigned int color        =    0;
-    unsigned int random       =    0;
+    uchar  verbose            =    0;
+    uchar  random             =    0;
     double magnification      = DEFAULT_ZOOM; // 0.5 will double the unit rect range
     double init_real          = DEFAULT_RE;
     double init_imag          = DEFAULT_IM;
+
     //char*  fname; //strmcpy to this address from the getopt loop
     reso_t* selected_reso     = &all_resolutions[0];
+    color_t* selected_color   = &all_colormaps[0];
 
     // begin getopts parsing
     while ((c = getopt_long(argc, argv, "s:x:y:o:c:z:vhr",
@@ -267,7 +292,8 @@ Settings* get_render_settings(int argc, char** argv)
                     std::cerr << "No size given" << std::endl;
                     exit(1);
                 }
-                for(unsigned int ri=0; ri < RESOLUTION_COUNT; ri++)
+                found = 0;
+                for(uint32_t ri=0; ri < RESOLUTION_COUNT; ri++)
                 {
                     if(strcmp(all_resolutions[ri].name, optarg) == 0)
                     {
@@ -278,6 +304,30 @@ Settings* get_render_settings(int argc, char** argv)
                 if(!found)
                 {
                     std::cerr << "Error: given resolution not supported" << std::endl;
+                    exit(1);
+                }
+                break;
+
+            case 'c': // get the color
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "No color given" << std::endl;
+                    exit(1);
+                }
+                std::cout << "Opt given: " << optarg << std::endl;
+                found = 0;
+                for(uint32_t ci=0; ci < COLORMAP_COUNT; ci++)
+                {
+                    std::cout << "Currently on: " << all_colormaps[ci].name << std::endl;
+                    if(strcmp(all_colormaps[ci].name, optarg) == 0)
+                    {
+                        selected_color = &all_colormaps[ci];
+                        found = 1;
+                    }
+                }
+                if(!found)
+                {
+                    std::cerr << "Error: given color scheme not supported" << std::endl;
                     exit(1);
                 }
                 break;
@@ -320,18 +370,20 @@ Settings* get_render_settings(int argc, char** argv)
                     std::cerr << "Error: no file path supplied" << std::endl;
                     exit(1);
                 }
+                // implement code to transfer char* to a std::string type
+                // store the std::string type in the Settings for later usage
                 break;
             
         }
 
     return new Settings(
             verbose,
-            color,
             random,
             init_real,
             init_imag,
             magnification,
-            selected_reso
+            selected_reso,
+            selected_color
     );
     // done handling getopts
 }
