@@ -1,11 +1,5 @@
-#CXX=g++
-#CPPFLAGS=-O3 -Wall -std=gnu++11
-#LIBS=
-#LDFLAGS=
-
-#RM=rm -f
 CXX=g++
-CXXFLAGS=-O3 -Wall -std=gnu++11
+CXXFLAGS=-O3 -Wall -std=gnu++11 -fdiagnostics-color
 LIBS=
 LDFLAGS=
 

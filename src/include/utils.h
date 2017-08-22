@@ -31,26 +31,39 @@
 // tiny integers used so much that it needs it's own typedef
 typedef unsigned char uchar;
 
-// the resolution struct that contains output size info
+/*
+ * The struct containing information about viewport rendering
+ */
 typedef struct reso_t {
     const char*  name;
     const uint32_t width;
     const uint32_t height;
 } reso_t;
 
-// a basic color triplet
+/*
+ * A basic double-based RGB triplet struct
+ * Used mostly with the gradients
+ */
 typedef struct color_t {
-    const char*   name;
-    const float      r;
-    const float      g;
-    const float      b;
+    double r;
+    double g;
+    double b;
 } color_t;
 
+/*
+ * Used to create various n-rank gradients
+ */
+typedef struct colormap_t {
+    const char* name;
+    const color_t color1;
+    const color_t color2;
+} colormap_t;
+
 // colors to use (names are checked in getopts)
-static color_t all_colormaps[COLORMAP_COUNT] = {
-    {"red",       9.5,    0,    0},
-    {"blue",        0,    0,  9.0},
-    {"mix",       2.5,  7.5,  3.4},
+static colormap_t all_colormaps[COLORMAP_COUNT] = {
+    {"b&w",    {  0.0,   0.0,   0.0}, {190.0, 190.0, 190.0}},
+    {"red",    {  0.0,  30.0,  30.0}, {190.0,   0.0,   0.0}},
+    {"blue",   {  0.0,   0.0,   0.0}, {  0.0,   0.0, 190.0}},
 };
 
 // Resolutions available to the program
@@ -129,30 +142,57 @@ static const char* option_help[NUM_COMMANDS] = {
     "",
 };
 
+inline double lerp(double a, double b, double t)
+{
+    return (1.0 - t) * a + t * b;   
+}
+
+
+/*
+ * Gradient class accepts a number of color constants
+ * and later receives indices to use an arbitrary-sized
+ * color palette.
+ *
+ * Currently only accepts two points and uses linear
+ * interpolation to create the color palette
+ */
 class Gradient
 {
 public:
-    float r;
-    float g;
-    float b;
-    Gradient(color_t* c): r(c->r), g(c->g), b(c->b) {};
+    const color_t& left;
+    const color_t& right;
+    Gradient(const color_t& a, const color_t& b): left(a), right(b) {};
 
-    uchar R(float t)
+    void reset(color_t* storage)
     {
-        return (int)(r*(1-t)*t*t*t*255);
-        
-    };
+        storage->r = 0.0;
+        storage->g = 0.0;
+        storage->b = 0.0;
+    }
 
-    uchar G(float t)
+    /*
+     *  Pick a color index X from a range of indices (N indices)
+     */
+    void pick(double x, double n, color_t* storage)
     {
-        return (int)(g*(1-t)*(1-t)*t*t*255);
+        double t = x / n;
+        storage->r = (1.0 - t) * left.r + t * right.r; 
+        storage->g = (1.0 - t) * left.g + t * right.g; 
+        storage->b = (1.0 - t) * left.b + t * right.b; 
+    }
 
-    };
-
-    uchar B(float t)
+    /*
+     * Similar to above except it interpolates between two indices
+     * used with the Normalized Iteration Count
+     */
+    void interp(double x, double n, double p, color_t* storage)
     {
-        return (int)(b*(1-t)*(1-t)*(1-t)*t*255);
-    };
+        double t1  = x / n;
+        double t2  = (x+1) / n;
+        storage->r  = lerp(lerp(left.r, right.r, t1), lerp(left.r, right.r, t2), p);
+        storage->g  = lerp(lerp(left.g, right.g, t1), lerp(left.g, right.g, t2), p);
+        storage->b  = lerp(lerp(left.b, right.b, t1), lerp(left.b, right.b, t2), p);
+    }
 };
 
 class Settings
@@ -179,7 +219,7 @@ public:
 
     // constructor - do all the dimensional alignment/math here
     Settings(uchar v, uchar r, double ir, double ii, double z,
-             reso_t* out, color_t* color_map)
+             reso_t* out, colormap_t* map)
     {
         verbose   =   v;
         random    =   r;
@@ -188,7 +228,7 @@ public:
         zoom      =   z;
         res       = out;
 
-        grad      = new Gradient(color_map);
+        grad      = new Gradient(map->color1, map->color2);
 
         double w = double(res->width);
         double h = double(res->height);
@@ -216,12 +256,12 @@ public:
         }
 
         std::cout << "Target resolution: " << res->width << "x"  << res->height << std::endl;
-        std::cout << "Desired point: "     <<  init_real << ", " <<   init_imag << std::endl;
-        std::cout << "Spans: "             <<     span_x << ", " <<      span_y << std::endl;
-        std::cout << "Top left: "          <<  topleft_x << ", " <<   topleft_y << std::endl;
-        std::cout << "Bot right: "         << botright_x << ", " <<  botright_y << std::endl;
-        std::cout << "Increments: "        <<     inc_re << ", " <<      inc_im << std::endl;
-        std::cout << "Magnification: "     <<       zoom <<                        std::endl;
+        std::cout << "Desired point:     " <<  init_real << ", " <<   init_imag << std::endl;
+        std::cout << "Spans:             " <<     span_x << ", " <<      span_y << std::endl;
+        std::cout << "Top left:          " <<  topleft_x << ", " <<   topleft_y << std::endl;
+        std::cout << "Bot right:         " << botright_x << ", " <<  botright_y << std::endl;
+        std::cout << "Increments:        " <<     inc_re << ", " <<      inc_im << std::endl;
+        std::cout << "Magnification:     " <<       zoom <<                        std::endl;
 
     };
 };
@@ -239,7 +279,8 @@ void print_help_info()
     for(unsigned int a=0; a < ASCII_LINES; a++)
         std::cout << ascii_art[a] << std::endl;
 
-    std::cout << std::endl << "Commands: " << std::endl;
+
+    std::cout << std::endl << "Usage: mandelbrot [OPTION]..." << std::endl;
     for(unsigned int c=0; c < NUM_COMMANDS-1; c++)
     {
         std::cout << "  --" << long_options[c].name << "  " << option_help[c] << std::endl; 
@@ -266,7 +307,7 @@ Settings* get_render_settings(int argc, char** argv)
 
     //char*  fname; //strmcpy to this address from the getopt loop
     reso_t* selected_reso     = &all_resolutions[0];
-    color_t* selected_color   = &all_colormaps[0];
+    colormap_t* selected_map   = &all_colormaps[0];
 
     // begin getopts parsing
     while ((c = getopt_long(argc, argv, "s:x:y:o:c:z:vhr",
@@ -314,14 +355,12 @@ Settings* get_render_settings(int argc, char** argv)
                     std::cerr << "No color given" << std::endl;
                     exit(1);
                 }
-                std::cout << "Opt given: " << optarg << std::endl;
                 found = 0;
                 for(uint32_t ci=0; ci < COLORMAP_COUNT; ci++)
                 {
-                    std::cout << "Currently on: " << all_colormaps[ci].name << std::endl;
                     if(strcmp(all_colormaps[ci].name, optarg) == 0)
                     {
-                        selected_color = &all_colormaps[ci];
+                        selected_map = &all_colormaps[ci];
                         found = 1;
                     }
                 }
@@ -383,10 +422,20 @@ Settings* get_render_settings(int argc, char** argv)
             init_imag,
             magnification,
             selected_reso,
-            selected_color
+            selected_map
     );
     // done handling getopts
 }
 
 /////////////////////////////////////////////////////////// END RENDER INFO SECTION
+/*
+ *  Convert a double to a uchar type for writing to file
+ */
+unsigned char flatten(double x)
+{
+    return (unsigned char)floor(x);
+}
+
+
+///////////////////////////////////////////////////////////
 #endif
