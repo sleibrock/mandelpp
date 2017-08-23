@@ -6,13 +6,13 @@
 //#include <gmp.h>
 
 // project level includes
-#include "include/utils.h"
+#include "include/opts.h"
 
-#define MAX_ITERS   255
+#define MAX_ITERS   500.0
 #define THRESHOLD   4.0
 #define LOG2        0.6931471805599453
 
-int render2(Settings* s)
+int render(Settings* s)
 {
     // store local variables to avoid constant pointer accesses
     double w       = s->res->width;
@@ -45,9 +45,8 @@ int render2(Settings* s)
 
     // additional stuff
     double log_zn = 0.0;
-    double nu = 0.0;
+    double nu     = 0.0;
 
-    uchar  iter;
     double iterf;
     double perc;   // used to calculate interpolation
     for(uint32_t y=0; y < h; y++)
@@ -55,31 +54,29 @@ int render2(Settings* s)
         for(uint32_t x=0; x < w; x++)
         {
 
-            iter  = 0;
             iterf = 0;
             z_re  = 0;
             z_im  = 0;
             z_re2 = 0;
             z_im2 = 0;
 
-            while(z_re2 + z_im2 < B2 && iter < MAX_ITERS)
+            while(z_re2 + z_im2 < B2 && iterf < MAX_ITERS)
             {
                 z_re2 = z_re * z_re;
                 z_im2 = z_im * z_im;
                 z_im  = (2.0 * z_re * z_im) + c_im;
                 z_re  = z_re2 - z_im2 + c_re; 
-                iter++;
                 iterf += 1.0;
             }
 
             // estimate how far we were from diverging and create a smoothed color
-            if(iter< MAX_ITERS)
+            if(iterf < MAX_ITERS)
             {
                 log_zn = log(z_re2 + z_im2) * 0.5;
                 nu     = log( log_zn / LOG2 ) / LOG2;
-                iter   = iter + 1.0 - nu;
+                iterf  = iterf + 1.0 - nu;
                 perc = iterf - floor(iterf);
-                grad->interp(floor(iterf), (double)MAX_ITERS, perc, &color);
+                grad->interp(floor(iterf), MAX_ITERS, perc, &color);
             }
             else 
             {
@@ -93,7 +90,7 @@ int render2(Settings* s)
             // increment x to proceed to next pixel
             c_re += inc_re;
         }
-        c_re = init_re;
+        c_re =  init_re;
         c_im += inc_im;
     }
 
@@ -111,7 +108,7 @@ int main(int argc, char **argv)
     Settings* render_settings;
     render_settings = get_render_settings(argc, argv);
 
-    render2(render_settings);
+    render(render_settings);
 
     return 0;
 }

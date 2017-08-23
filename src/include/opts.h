@@ -8,8 +8,8 @@
  *   ascii art!
  */
 
-#ifndef _MANDEL_UTILS_H
-#define _MANDEL_UTILS_H
+#ifndef _OPTS_H
+#define _OPTS_H
 
 #include <iostream>
 #include <stdlib.h>
@@ -17,92 +17,20 @@
 #include <math.h>
 #include <string.h>
 
+// local includes
+#include "resolutions.h"
+#include "colors.h"
+
 #define PROGRAM_VERSION        0.1
 #define NUM_COMMANDS            10
-#define RESOLUTION_COUNT        23
-#define COLORMAP_COUNT           3
 #define ASCII_LINES              9
 #define DEFAULT_ZOOM           0.5
 #define DEFAULT_RE            -0.7
 #define DEFAULT_IM             0.0
 
 
-//////////////////////////////////////////////////////// BEGIN CLASS/STRUCT/ARR DEFS
-// tiny integers used so much that it needs it's own typedef
-typedef unsigned char uchar;
-
-/*
- * The struct containing information about viewport rendering
- */
-typedef struct reso_t {
-    const char*  name;
-    const uint32_t width;
-    const uint32_t height;
-} reso_t;
-
-/*
- * A basic double-based RGB triplet struct
- * Used mostly with the gradients
- */
-typedef struct color_t {
-    double r;
-    double g;
-    double b;
-} color_t;
-
-/*
- * Used to create various n-rank gradients
- */
-typedef struct colormap_t {
-    const char* name;
-    const color_t color1;
-    const color_t color2;
-} colormap_t;
-
-// colors to use (names are checked in getopts)
-static colormap_t all_colormaps[COLORMAP_COUNT] = {
-    {"b&w",    {  0.0,   0.0,   0.0}, {190.0, 190.0, 190.0}},
-    {"red",    {  0.0,  30.0,  30.0}, {190.0,   0.0,   0.0}},
-    {"blue",   {  0.0,   0.0,   0.0}, {  0.0,   0.0, 190.0}},
-};
-
-// Resolutions available to the program
-// Width must always be larger than height for landscape aspect
-static reso_t all_resolutions[RESOLUTION_COUNT] = {
-    // standard resolution outputs
-    {"480p",       640,    480},
-    {"720p",      1280,    720},
-    {"768p",      1024,    768},
-    {"900p",      1600,    900},
-    {"1080p",     1920,   1080},
-    {"1440p",     2560,   1440},
-
-    // highly deadly resolutions
-    {"4k",        3840,   2160},
-    {"8k",        7680,   4320},
-    {"16k",      15360,   8640},  // ~400mb
-    {"32k",      30720,  17280},  // ~1.6gb !!!!
-    {"64k",      61440,  34560},  // ~6gb, god help us all
-
-    // Apple resolutions
-    {"iphoneSE",  1136,    640},
-    {"iphone5",   1136,    640},
-    {"iphone7",   1134,    750},
-    {"iphone7+",  2208,   1242},
-    {"ipadMini",  2048,   1536},
-    {"ipadAir",   2048,   1536},
-    {"ipadPro10", 2224,   1668},
-    {"ipadPro12", 2732,   2048},
-    {"iwatch1",    340,    272},
-    {"iwatch2",    390,    312},
-
-    // unconventional rendering resolutions 
-    {"twitter",   1024,    576},
-    {"instagram", 1024,    768},
-};
-
-
-static const char* ascii_art[ASCII_LINES] = {
+static const char* ascii_art[ASCII_LINES] =
+{
     "------------------*------",
     "---------------******----",
     "--------*-----********---",
@@ -114,9 +42,13 @@ static const char* ascii_art[ASCII_LINES] = {
     "------------------*------",
 };
 
-// getopt_long arguments
-// 0 - no_arg, 1 - mandatory, 2 - arg required
-static struct option long_options[NUM_COMMANDS] = {
+
+/*
+ * getopt_long arguments
+ * 0 - no_arg, 1 - mandatory, 2 - arg required
+ */
+static struct option long_options[NUM_COMMANDS] =
+{
     {"size",    2,    0, 's'},
     {"real",    2,    0, 'x'},
     {"imag",    2,    0, 'y'},
@@ -129,7 +61,11 @@ static struct option long_options[NUM_COMMANDS] = {
     {NULL,      0, NULL,   0}
 };
 
-static const char* option_help[NUM_COMMANDS] = {
+/*
+ * help messages for each command
+ */
+static const char* option_help[NUM_COMMANDS] =
+{
     "sets the target resolution of the render",
     "sets the initial real value to use",
     "sets the initial imaginary value to use",
@@ -142,69 +78,20 @@ static const char* option_help[NUM_COMMANDS] = {
     "",
 };
 
-inline double lerp(double a, double b, double t)
-{
-    return (1.0 - t) * a + t * b;   
-}
-
-
 /*
- * Gradient class accepts a number of color constants
- * and later receives indices to use an arbitrary-sized
- * color palette.
- *
- * Currently only accepts two points and uses linear
- * interpolation to create the color palette
+ * The Settings class to pass through to render functions
+ * Will contain all data about the image type and dimensions
  */
-class Gradient
-{
-public:
-    const color_t& left;
-    const color_t& right;
-    Gradient(const color_t& a, const color_t& b): left(a), right(b) {};
-
-    void reset(color_t* storage)
-    {
-        storage->r = 0.0;
-        storage->g = 0.0;
-        storage->b = 0.0;
-    }
-
-    /*
-     *  Pick a color index X from a range of indices (N indices)
-     */
-    void pick(double x, double n, color_t* storage)
-    {
-        double t = x / n;
-        storage->r = (1.0 - t) * left.r + t * right.r; 
-        storage->g = (1.0 - t) * left.g + t * right.g; 
-        storage->b = (1.0 - t) * left.b + t * right.b; 
-    }
-
-    /*
-     * Similar to above except it interpolates between two indices
-     * used with the Normalized Iteration Count
-     */
-    void interp(double x, double n, double p, color_t* storage)
-    {
-        double t1  = x / n;
-        double t2  = (x+1) / n;
-        storage->r  = lerp(lerp(left.r, right.r, t1), lerp(left.r, right.r, t2), p);
-        storage->g  = lerp(lerp(left.g, right.g, t1), lerp(left.g, right.g, t2), p);
-        storage->b  = lerp(lerp(left.b, right.b, t1), lerp(left.b, right.b, t2), p);
-    }
-};
-
 class Settings
 {
 public:
-    unsigned char verbose;
-    unsigned char random;
-    double init_real;
-    double init_imag;
-    double zoom;
+    uint8_t   verbose;
+    uint8_t   random;
+    double    init_real;
+    double    init_imag;
+    double    zoom;
     // char* fname;
-    reso_t*  res;
+    reso_t*   res;
     Gradient* grad;
 
     double span_x;
@@ -218,7 +105,7 @@ public:
     double inc_im;
 
     // constructor - do all the dimensional alignment/math here
-    Settings(uchar v, uchar r, double ir, double ii, double z,
+    Settings(uint8_t v, uint8_t r, double ir, double ii, double z,
              reso_t* out, colormap_t* map)
     {
         verbose   =   v;
@@ -262,18 +149,12 @@ public:
         std::cout << "Bot right:         " << botright_x << ", " <<  botright_y << std::endl;
         std::cout << "Increments:        " <<     inc_re << ", " <<      inc_im << std::endl;
         std::cout << "Magnification:     " <<       zoom <<                        std::endl;
-
     };
 };
-//////////////////////////////////////////////////////// END S/C/A DEFS
 
-/////////////////////////////////////////////////////// BEGIN HELP INFO SECTION
-void print_supported_resolutions()
-{
-    std::cout << "Supported resolutions list: " << std::endl << std::endl;
-    std::cout << "idk" << std::endl;
-};
-
+/*
+ * Prints all help messages for each command
+ */
 void print_help_info()
 {
     for(unsigned int a=0; a < ASCII_LINES; a++)
@@ -299,11 +180,11 @@ Settings* get_render_settings(int argc, char** argv)
     int option_index = 0;
 
     // values to use in the struct (adjusted by the getopts args)
-    uchar  verbose            =    0;
-    uchar  random             =    0;
-    double magnification      = DEFAULT_ZOOM; // 0.5 will double the unit rect range
-    double init_real          = DEFAULT_RE;
-    double init_imag          = DEFAULT_IM;
+    uint8_t verbose            =    0;
+    uint8_t random             =    0;
+    double  magnification      = DEFAULT_ZOOM; // 0.5 will double the unit rect range
+    double  init_real          = DEFAULT_RE;
+    double  init_imag          = DEFAULT_IM;
 
     //char*  fname; //strmcpy to this address from the getopt loop
     reso_t* selected_reso     = &all_resolutions[0];
@@ -415,6 +296,7 @@ Settings* get_render_settings(int argc, char** argv)
             
         }
 
+    // Return the pointer to the new object allocated by RAII
     return new Settings(
             verbose,
             random,
@@ -424,18 +306,6 @@ Settings* get_render_settings(int argc, char** argv)
             selected_reso,
             selected_map
     );
-    // done handling getopts
 }
 
-/////////////////////////////////////////////////////////// END RENDER INFO SECTION
-/*
- *  Convert a double to a uchar type for writing to file
- */
-unsigned char flatten(double x)
-{
-    return (unsigned char)floor(x);
-}
-
-
-///////////////////////////////////////////////////////////
 #endif
