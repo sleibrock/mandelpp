@@ -13,6 +13,8 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <cstdlib>
+#include <ctime>
 #include <getopt.h>
 #include <math.h>
 #include <string.h>
@@ -28,18 +30,25 @@
 #define DEFAULT_RE            -0.7
 #define DEFAULT_IM             0.0
 
+// define macros for random value creation
+#define RAND_ZOOM_HIGH        10.0
 
+#define RANDOM(LOW, HIGH) (LOW + (rand() * (HIGH - LOW)))
+
+/*
+ * Some ascii art to print at the help page
+ */
 static const char* ascii_art[ASCII_LINES] =
 {
-    "------------------*------",
-    "---------------******----",
-    "--------*-----********---",
-    "----*--***--**********---",
-    "--*******************----",
-    "----*--***--**********---",
-    "--------*----*********---",
-    "--------------*******----",
-    "------------------*------",
+    "                  .      ",
+    "               ..***.    ",
+    "        .    .*******.   ",
+    "    .  .*.  .********.   ",
+    "   .*..***..********.    ",
+    "    .  .*.  .********.   ",
+    "        .    .*******.   ",
+    "               ..***.    ",
+    "                  .      ",
 };
 
 
@@ -47,7 +56,7 @@ static const char* ascii_art[ASCII_LINES] =
  * getopt_long arguments
  * 0 - no_arg, 1 - mandatory, 2 - arg required
  */
-static struct option long_options[NUM_COMMANDS] =
+static struct option long_opts[NUM_COMMANDS] =
 {
     {"size",    2,    0, 's'},
     {"real",    2,    0, 'x'},
@@ -60,6 +69,7 @@ static struct option long_options[NUM_COMMANDS] =
     {"help",    0,    0, 'h'},
     {NULL,      0, NULL,   0}
 };
+
 
 /*
  * help messages for each command
@@ -110,17 +120,29 @@ public:
     {
         verbose   =   v;
         random    =   r;
-        init_real =  ir;
-        init_imag =  ii;
-        zoom      =   z;
-        res       = out;
 
-        grad      = new Gradient(map->color1, map->color2);
+        // if we're in random mode, generate coordinates randomly
+        if(!random)
+        {
+            init_real =  ir;
+            init_imag =  ii;
+            zoom      =   z;
+        }
+        else
+        {
+            unsigned int a0 = RANDOM(0, 2*M_PI);
+            unsigned int a1 = RANDOM(0, 2*M_PI);
+            init_real       = (double)sin(a0);
+            init_imag       = (double)cos(a1);
+            zoom            = (double)fabs(sin(a0+a1)) * RAND_ZOOM_HIGH;
+        }
+        res      = out;
+        grad     = new Gradient(map->color1, map->color2);
 
         double w = double(res->width);
         double h = double(res->height);
-        span_x = ((w/h) * 0.5) * (1.0 / zoom);
-        span_y = 0.5           * (1.0 / zoom);
+        span_x   = ((w/h) * 0.5) * (1.0 / zoom);
+        span_y   =          0.5  * (1.0 / zoom);
 
         topleft_x  = init_real - span_x;
         topleft_y  = init_imag - span_y;
@@ -131,6 +153,9 @@ public:
         inc_im = (fabs(topleft_y - botright_y)) * (1.0 / h);
     }
 
+    /*
+     * Displays info about the fractal space when verbosity is set
+     */
     void display_info()
     {
         if(!verbose)
@@ -138,16 +163,14 @@ public:
 
         // print some basic stuff
         if(random)
-        {
-            std::cout << "Random mode enabled!";
-        }
+            std::cout << "*** Random mode enabled! ***" << std::endl;
 
         std::cout << "Target resolution: " << res->width << "x"  << res->height << std::endl;
-        std::cout << "Desired point:     " <<  init_real << ", " <<   init_imag << std::endl;
-        std::cout << "Spans:             " <<     span_x << ", " <<      span_y << std::endl;
-        std::cout << "Top left:          " <<  topleft_x << ", " <<   topleft_y << std::endl;
-        std::cout << "Bot right:         " << botright_x << ", " <<  botright_y << std::endl;
-        std::cout << "Increments:        " <<     inc_re << ", " <<      inc_im << std::endl;
+        std::cout << "Desired point:     " <<  init_real << "x " <<   init_imag << std::endl;
+        std::cout << "Spans:             " <<     span_x << "x " <<      span_y << std::endl;
+        std::cout << "Top left:          " <<  topleft_x << "x " <<   topleft_y << std::endl;
+        std::cout << "Bot right:         " << botright_x << "x " <<  botright_y << std::endl;
+        std::cout << "Increments:        " <<     inc_re << "x " <<      inc_im << std::endl;
         std::cout << "Magnification:     " <<       zoom <<                        std::endl;
     };
 };
@@ -160,13 +183,17 @@ void print_help_info()
     for(unsigned int a=0; a < ASCII_LINES; a++)
         std::cout << ascii_art[a] << std::endl;
 
-
     std::cout << std::endl << "Usage: mandelbrot [OPTION]..." << std::endl;
     for(unsigned int c=0; c < NUM_COMMANDS-1; c++)
     {
-        std::cout << "  --" << long_options[c].name << "  " << option_help[c] << std::endl; 
+        std::cout << "  --" << long_opts[c].name << "  " << option_help[c] << std::endl;
     }
 }
+
+/*
+ *
+ */
+static const char* short_opts = "s:x:y:o:c:z:vhr";
 
 /*
  * get the program render settings from getopt_long
@@ -180,19 +207,18 @@ Settings* get_render_settings(int argc, char** argv)
     int option_index = 0;
 
     // values to use in the struct (adjusted by the getopts args)
-    uint8_t verbose            =    0;
-    uint8_t random             =    0;
-    double  magnification      = DEFAULT_ZOOM; // 0.5 will double the unit rect range
-    double  init_real          = DEFAULT_RE;
-    double  init_imag          = DEFAULT_IM;
+    uint8_t verbose       =            0;
+    uint8_t random        =            0;
+    double  init_real     =   DEFAULT_RE;
+    double  init_imag     =   DEFAULT_IM;
+    double  magnification = DEFAULT_ZOOM; // 0.5 will double the unit rect range
 
     //char*  fname; //strmcpy to this address from the getopt loop
-    reso_t* selected_reso     = &all_resolutions[0];
-    colormap_t* selected_map   = &all_colormaps[0];
+    reso_t*     selected_reso = &all_resolutions[0];
+    colormap_t* selected_map  = &all_colormaps[0];
 
     // begin getopts parsing
-    while ((c = getopt_long(argc, argv, "s:x:y:o:c:z:vhr",
-                            long_options, &option_index)) != -1)
+    while ((c = getopt_long(argc, argv, short_opts, long_opts, &option_index)) != -1)
         switch(c)
         {
             case 'v': // set the verbosity
@@ -226,6 +252,7 @@ Settings* get_render_settings(int argc, char** argv)
                 if(!found)
                 {
                     std::cerr << "Error: given resolution not supported" << std::endl;
+                    print_supported_resolutions();
                     exit(1);
                 }
                 break;
@@ -293,7 +320,6 @@ Settings* get_render_settings(int argc, char** argv)
                 // implement code to transfer char* to a std::string type
                 // store the std::string type in the Settings for later usage
                 break;
-            
         }
 
     // Return the pointer to the new object allocated by RAII

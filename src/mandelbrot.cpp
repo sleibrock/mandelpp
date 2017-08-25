@@ -8,9 +8,10 @@
 // project level includes
 #include "include/opts.h"
 
-#define MAX_ITERS   500.0
+#define MAX_ITERS   1000.0
 #define THRESHOLD   4.0
 #define LOG2        0.6931471805599453
+
 
 int render(Settings* s)
 {
@@ -80,8 +81,8 @@ int render(Settings* s)
             }
             else 
             {
-                // we hit the max iter so max values should be colored black
-                grad->reset(&color);
+                // no lerping between iter palettes, just pick a color
+                grad->pick(floor(iterf), MAX_ITERS, &color);
             }
 
             // write the current color to file
@@ -105,6 +106,7 @@ int render(Settings* s)
  */
 int main(int argc, char **argv)
 {
+    srand(time(0));
     Settings* render_settings;
     render_settings = get_render_settings(argc, argv);
 
