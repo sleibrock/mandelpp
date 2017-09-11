@@ -7,6 +7,7 @@
 
 // project level includes
 #include "include/opts.h"
+#include "include/complex.h"
 
 #define MAX_ITERS   1000.0
 #define THRESHOLD   4.0

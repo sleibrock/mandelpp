@@ -8,7 +8,7 @@ MKD=mkdir -p
 
 S=src
 O=obj
-OBJS=$(addprefix $(O)/,mandelbrot.o)
+OBJS=$(addprefix $(O)/,mandelbrot.o complex.o)
 
 TARGET=mandelbrot
 
