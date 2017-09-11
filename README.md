@@ -27,6 +27,12 @@ git clone https://github.com/sleibrock/mandelpp && cd mandelpp
 make
 ```
 
+# Todo's
+
+* Implement a class-based approach to Complex arithmetic
+* Update Make process to detect `gmp.h` on the target system
+* Add macro'd code for GMP arithmetic support
+
 # Requirements
 
 Compiles, tested and runs on the following:
