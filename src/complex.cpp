@@ -9,6 +9,7 @@ Cmp::Cmp()
 {
 }
 
+
 /*
  *
  */
@@ -70,7 +71,7 @@ Cmp::~Cmp(){}
 Cmp Cmp::operator+(const Cmp& other)
 {
     Cmp r;
-    r.real = real + other.imag;
+    r.real = real + other.real;
     r.imag = imag + other.imag;
     return r; 
     
@@ -79,7 +80,7 @@ Cmp Cmp::operator+(const Cmp& other)
 Cmp Cmp::operator-(const Cmp& other)
 {
     Cmp r;
-    r.real = real - other.imag;
+    r.real = real - other.real;
     r.imag = imag - other.imag;
     return r;
 }
@@ -105,8 +106,8 @@ Cmp Cmp::operator/(const Cmp& other)
 {
     Cmp r;
     double denom = (other.real * other.real) + (other.imag * other.imag);
-    r.real = (real * other.real) + (imag * other.imag) / denom;
-    r.imag = (imag * other.real) - (real * other.imag) / denom;
+    r.real = ((real * other.real) + (imag * other.imag)) / denom;
+    r.imag = ((imag * other.real) - (real * other.imag)) / denom;
     return r;
 }
 
@@ -150,8 +151,8 @@ Cmp& Cmp::operator*=(const Cmp& other)
 Cmp& Cmp::operator/=(const Cmp& other)
 {
     double denom = (other.real * other.real) + (other.imag * other.imag);
-    real = (real * other.real) + (imag * other.imag) / denom;
-    imag = (imag * other.real) - (real * other.imag) / denom;
+    real = ((real * other.real) + (imag * other.imag)) / denom;
+    imag = ((imag * other.real) - (real * other.imag)) / denom;
     return *this;
 }
 
@@ -166,6 +167,23 @@ Cmp Cmp::conjugate()
     a.imag = imag * (-1.0);
     return a;
 }
+
+/*
+ * Length2 method (real^2 + imag^2)
+ * This is cheaper to do since it doesn't
+ * involve calculating square roots
+ */
+#ifdef DGMP
+void Cmp::length2(mpf_t* res)
+{
+
+}
+#else
+double Cmp::length2()
+{
+    return (real*real) + (imag*imag);
+}
+#endif
 
 
 /*

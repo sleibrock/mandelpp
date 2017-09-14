@@ -1,14 +1,17 @@
 /*
  * Complex Class
  * Macro included to determine whether to use GMP types or not
- * The std::complex does not support native GMP type templating
- * because of the nature of GMP
+ * Because std::complex isn't meant for GMP's mpf_t types,
+ * we will have to roll a custom class that supports mpf_t ops
+ * The DGMP macro will inform us whether libgmp is supported
+ * in the compiler
  */ 
 
-#include <cmath>
+#ifndef _CMP_H
+#define _CMP_H
 
-#ifndef _CMP_HEADER
-#define _CMP_HEADER
+#include <cmath>
+#include <iostream>
 
 class Cmp
 {
@@ -27,18 +30,24 @@ public:
     ~Cmp();
 
     // math ops
-    Cmp operator+(const Cmp&);
-    Cmp operator-(const Cmp&);
-    Cmp operator*(const Cmp&);
-    Cmp operator/(const Cmp&);
+    Cmp    operator+(const Cmp&);
+    Cmp    operator-(const Cmp&);
+    Cmp    operator*(const Cmp&);
+    Cmp    operator/(const Cmp&);
 
-    Cmp& operator+=(const Cmp&);
-    Cmp& operator-=(const Cmp&);
-    Cmp& operator*=(const Cmp&);
-    Cmp& operator/=(const Cmp&);
+    Cmp&   operator+=(const Cmp&);
+    Cmp&   operator-=(const Cmp&);
+    Cmp&   operator*=(const Cmp&);
+    Cmp&   operator/=(const Cmp&);
 
     // methods
-    Cmp conjugate();
+    Cmp    conjugate();
+
+#ifdef DGMP
+    void   length2(mpf_t*);
+#else
+    double length2();
+#endif
 
     // debug
     friend std::ostream& operator<<(std::ostream&, const Cmp&); 

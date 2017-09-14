@@ -1,43 +1,61 @@
 #include <iostream>
 #include <fstream>
-#include <getopt.h>
+
+#include "include/complex.h"
+#include "include/opts.h"
+
 
 // use GMP soon for ultra precision
 //#include <gmp.h>
 
-// project level includes
-#include "include/opts.h"
-#include "include/complex.h"
-
-#define MAX_ITERS   1000.0
+#define MAX_ITERS   255.0
 #define THRESHOLD   4.0
 #define LOG2        0.6931471805599453
 
 
-int render(Settings* s)
+/*
+ * Take in a Complex value and iterate it
+ * until it escapes the boundary threshold or exceeds
+ * the maximum iteration (MAX_ITERS)
+ * Calculating depends on whether libgmp is compiled
+ */
+double iterate(Cmp& z, const Cmp& c)
 {
-    // store local variables to avoid constant pointer accesses
-    double w       = s->res->width;
-    double h       = s->res->height;
-    Gradient* grad = s->grad;
-    
-    // z values to mutate for iteration
-    double z_re, z_re2;
-    double z_im, z_im2;
+    double count = 0;
 
-    double init_re = s->topleft_x; 
-    double init_im = s->topleft_y;
-    double inc_re  = s->inc_re;
-    double inc_im  = s->inc_im;
-    double c_re = init_re;
-    double c_im = init_im;
+#ifdef DGMP
+#else
+    while(z.length2() < THRESHOLD && count++ < MAX_ITERS)
+    {
+        z = (z*z*z) + c;
+        //std::cout << "Current z is " << z << std::endl;
+    }
+#endif
 
-    // bailout radius
-    const double B = 256.0;
-    const double B2 = B*B;
+    return count;
+}
 
-    s->display_info();
-    color_t color = {0.0, 0.0, 0.0};
+
+/*
+ * Main rendering function to render data to an image
+ */
+int render_image(opts::Settings& s)
+{
+    // store local vars
+    double    w    = s.res->width;
+    double    h    = s.res->height;
+
+    s.display_info();
+
+    double init_re = s.topleft_x;
+    double init_im = s.topleft_y;
+    double inc_re  = s.inc_re;
+    double inc_im  = s.inc_im;
+
+    // iteration values
+    Cmp z(0, 0), c(init_re, init_im);
+    Cmp xbump(inc_re, 0);
+    Cmp ybump(0, inc_im);
 
     std::ofstream ofs("./output.ppm", std::ios::out | std::ios::binary);
     ofs << "P6\n";
@@ -45,73 +63,33 @@ int render(Settings* s)
     ofs << w << " " << h;
     ofs << "\n255\n";
 
-    // additional stuff
-    double log_zn = 0.0;
-    double nu     = 0.0;
+    double i = 0;
+    uint8_t result = 0;
 
-    double iterf;
-    double perc;   // used to calculate interpolation
+    double init_zx, init_zy;
+    init_zx = -0.8;
+    init_zy = 0.156;
+
     for(uint32_t y=0; y < h; y++)
     {
         for(uint32_t x=0; x < w; x++)
         {
+            z.real = init_zx;
+            z.imag = init_zy;
 
-            iterf = 0;
-            z_re  = 0;
-            z_im  = 0;
-            z_re2 = 0;
-            z_im2 = 0;
+            i = iterate(z, c);
 
-            while(z_re2 + z_im2 < B2 && iterf < MAX_ITERS)
-            {
-                z_re2 = z_re * z_re;
-                z_im2 = z_im * z_im;
-                z_im  = (2.0 * z_re * z_im) + c_im;
-                z_re  = z_re2 - z_im2 + c_re; 
-                iterf += 1.0;
-            }
-
-            // estimate how far we were from diverging and create a smoothed color
-            if(iterf < MAX_ITERS)
-            {
-                log_zn = log(z_re2 + z_im2) * 0.5;
-                nu     = log( log_zn / LOG2 ) / LOG2;
-                iterf  = iterf + 1.0 - nu;
-                perc = iterf - floor(iterf);
-                grad->interp(floor(iterf), MAX_ITERS, perc, &color);
-            }
-            else 
-            {
-                // no lerping between iter palettes, just pick a color
-                grad->pick(floor(iterf), MAX_ITERS, &color);
-            }
-
-            // write the current color to file
-            ofs << flatten(color.r) << flatten(color.g) << flatten(color.b);
-            
-            // increment x to proceed to next pixel
-            c_re += inc_re;
+            result = colors::flatten(i);
+            ofs << result << result << result;
+            c += xbump;
         }
-        c_re =  init_re;
-        c_im += inc_im;
+        c.real = init_re;
+        c += ybump;
     }
 
     ofs.close();
-    if(s->verbose)
-        std::cout << "Finished writing image" << std::endl;
-    return 0;
-}
-
-/*
- * The main function of the program
- */
-int main(int argc, char **argv)
-{
-    srand(time(0));
-    Settings* render_settings;
-    render_settings = get_render_settings(argc, argv);
-
-    render(render_settings);
 
     return 0;
 }
+
+// end
