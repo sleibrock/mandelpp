@@ -25,6 +25,8 @@
 
 #define PROGRAM_VERSION        0.1
 #define NUM_COMMANDS            10
+#define M_COMMANDS              10
+#define J_COMMANDS              10
 #define ASCII_LINES              9
 #define DEFAULT_ZOOM           0.5
 #define DEFAULT_RE            -0.7
@@ -37,35 +39,45 @@
 
 namespace opts
 {
-    extern const        char*  ascii_art[ASCII_LINES];
-    extern const struct option long_opts[NUM_COMMANDS];
-    extern const        char*  short_opts;
-    extern const        char*  option_help[NUM_COMMANDS];
+    // Different arrays will have to be made for
+    // the Julia and Mandelbrot programs
+    extern const        char*    mandel_art[ASCII_LINES];
+    extern const struct option   mlong_opts[M_COMMANDS];
+    extern const        char*   mshort_opts;
+    extern const        char*  moption_help[M_COMMANDS];
 
-    void print_help_info();
+    extern const        char*     julia_art[ASCII_LINES];
+    extern const struct option   jlong_opts[J_COMMANDS];
+    extern const        char*   jshort_opts[J_COMMANDS];
+    extern const        char*  joption_help[J_COMMANDS]; 
+
+    void print_mandel_info();
+    void print_julia_info();
 
     class Settings
     {
     public:
-        uint8_t   verbose;
-        uint8_t   random;
-        double    init_real;
-        double    init_imag;
-        double    zoom;
+        // resolution and filename
         // char* fname;
-        const reso::rect_t*   res;
-        
-        double    span_x,     span_y;
-        double    topleft_x,  topleft_y;
-        double    botright_x, botright_y;
-        
-        double    inc_re, inc_im;
+        const reso::rect_t* res;
+
+        // program flags
+        uint8_t verbose,   random;
+
+        // dimensional values for iterating later
+        double  init_real,  init_imag, zoom;
+        double  span_x,     span_y;
+        double  topleft_x,  topleft_y;
+        double  botright_x, botright_y;
+        double  inc_re,     inc_im;
+        double  init_zr,    init_zi; 
         
         Settings(uint8_t, uint8_t, double, double, double, const reso::rect_t*);
         void display_info();
     };
 
-    Settings parse(int argc, char** argv);
+    Settings mparse(int, char**);
+    Settings jparse(int, char**);
 }
 
 #endif

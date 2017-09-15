@@ -10,7 +10,6 @@
 #ifndef _RESOLUTION_H
 #define _RESOLUTION_H
 
-#define RESOLUTION_COUNT 23
 
 
 namespace reso
@@ -26,7 +25,9 @@ namespace reso
     } reso_t;
     
     
-    extern const rect_t all[RESOLUTION_COUNT];
+    //extern const rect_t all[RESOLUTION_COUNT];
+    extern const rect_t all[];
+
     void print_all();
     
 }

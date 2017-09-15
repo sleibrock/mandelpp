@@ -1,5 +1,13 @@
+/*
+ * resolutions.cpp
+ *
+ * Includes all code surrouding various output dimensions
+ */
 #include <iostream>
 #include "include/resolutions.h"
+
+#define RESOLUTION_COUNT 23
+
 
 namespace reso
 {

@@ -1,3 +1,12 @@
+/*
+ * complex.cpp
+ * 
+ * All Complex class logic and such goes here
+ * if the DGMP macro is enabled (if libgmp is on the system)
+ * then use those #if macros to create GMP-specific code
+ * using the mpf_t type
+ */
+
 #include <iostream>
 #include "include/complex.h"
 

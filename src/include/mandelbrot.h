@@ -7,7 +7,7 @@
 #include "opts.h"
 
 double iterate(Cmp&, Cmp&);
-int render_image(opts::Settings&);
-
+int mandelbrot_image(opts::Settings&);
+int main(int, char**);
 
 #endif

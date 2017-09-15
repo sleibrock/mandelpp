@@ -1,6 +1,6 @@
-# Mandelbrot Set Generator
+# Mandelbrot and Julia Set Generators
 
-A Mandelbrot Set rasterizing tool to output images of Mandelbrot Sets.
+`mandelpp` is a project aimed at creating high-quality Mandelbrot and Julia set images. It is currently written in C++ for performance.
 
 Usage:
 ```
@@ -29,9 +29,14 @@ make
 
 # Todo's
 
-~~Implement a class-based approach to Complex arithmetic~~
+* ~~Implement a class-based approach to Complex arithmetic~~
+* Support an array of functions for the Julia program
 * Update Make process to detect `gmp.h` on the target system
 * Add macro'd code for GMP arithmetic support
+* Implement a new coloring system and smooth shading (norm iter count)
+* Ensure all library code is wrapped in easy-to-use namespaces
+* Add a `.travis.yml` file for CI builds and testing
+* Create documentation and set up a `gh-pages` branch
 
 # Requirements
 

@@ -5,10 +5,9 @@
 
 namespace opts
 {
-    /*
-     * Ascii art to decorate the -h(elp) message
-     */
-    const char* ascii_art[ASCII_LINES] =
+
+    // Mandelbrot ascii art for -h(elp)
+    const char* mandel_art[ASCII_LINES] =
     {
         "                  .      ",
         "               ..***.    ",
@@ -20,13 +19,27 @@ namespace opts
         "               ..***.    ",
         "                  .      ",
     };
+
+    // Julia ascii art for -h(elp)
+    const char* julia_art[ASCII_LINES] =
+    {
+        "                         ",
+        "                         ",
+        "                         ",
+        "                         ",
+        "                         ",
+        "                         ",
+        "                         ",
+        "                         ",
+        "                         ",
+    };
     
     
     /*
     * getopt_long arguments
     * 0 - no_arg, 1 - mandatory, 2 - arg required
     */
-    const struct option long_opts[NUM_COMMANDS] =
+    const struct option mlong_opts[NUM_COMMANDS] =
     {
         {"size",    2,    0, 's'},
         {"real",    2,    0, 'x'},
@@ -44,8 +57,8 @@ namespace opts
     /*
     * help messages for each command
     */
-    const char* short_opts = "s:x:y:o:c:z:vhr";
-    const char* option_help[NUM_COMMANDS] =
+    const char* mshort_opts = "s:x:y:o:c:z:vhr";
+    const char* moption_help[NUM_COMMANDS] =
     {
         "sets the target resolution of the render",
         "sets the initial real value to use",
@@ -118,18 +131,23 @@ namespace opts
         std::cout << "Magnification:     " <<       zoom <<                       std::endl;
     }
     
-    void print_help_info()
+    void print_mandel_info()
     {
         for(uint32_t a=0; a < ASCII_LINES; a++)
-            std::cout << ascii_art[a] << std::endl;
+            std::cout << mandel_art[a] << std::endl;
 
         std::cout << std::endl << "Usage: mandelbrot [OPTION]..." << std::endl;
         for(uint32_t h=0; h < NUM_COMMANDS-1; h++)
-            std::cout << "  --" << long_opts[h].name << " " << option_help[h] << std::endl;
+            std::cout << "  --" << mlong_opts[h].name << " " << moption_help[h] << std::endl;
+    }
+
+    void print_julia_info()
+    {
+
     }
     
     
-    Settings parse(int argc, char** argv)
+    Settings mparse(int argc, char** argv)
     {
         // values used during the getopts phase
         int c;
@@ -147,28 +165,34 @@ namespace opts
         uint32_t selected_reso = 0;
         
         // begin getopts parsing
-        while ((c = getopt_long(argc, argv, short_opts, long_opts, &option_index)) != -1)
+        while ((c = getopt_long(argc, argv, mshort_opts, mlong_opts, &option_index)) != -1)
             switch(c)
             {
-            case 'v': // set the verbosity
+            case 'v':
+                // verbosity switch
                 verbose = 1;
                 break;
-
-            case 'h': // print help and quit
-                print_help_info();
-                exit(0);      // exit here because we can't return-exit
+                
+            case 'h': 
+                // print help and quit
+                print_mandel_info();
+                exit(0);
                 break;
                 
-            case 'r': // enable random point/zoom (overrides given coords)
+            case 'r':
+                // enable random mode
                 random = 1;
                 break;
                 
-            case 's': // set the resolution target
+            case 's':
+                // set the resolution rect from ones available
                 if(strlen(optarg) == 0)
                 {
                     std::cerr << "No size given" << std::endl;
                     exit(1);
                 }
+
+                // linear search to find the supplied reso
                 found = 0;
                 for(uint32_t ri=0; ri < RESOLUTION_COUNT; ri++)
                 {
@@ -178,6 +202,7 @@ namespace opts
                         found = 1;
                     }
                 }
+
                 if(!found)
                 {
                     std::cerr << "Error: given resolution not supported" << std::endl;
@@ -186,55 +211,39 @@ namespace opts
                 }
                 break;
                 
-                /*
-            case 'c': // get the color
-                if(strlen(optarg) == 0)
-                {
-                    std::cerr << "No color given" << std::endl;
-                    exit(1);
-                }
-                found = 0;
-                for(uint32_t ci=0; ci < COLORMAP_COUNT; ci++)
-                {
-                    if(strcmp(colors::all_colormaps[ci].name, optarg) == 0)
-                    {
-                        selected_map = &colors::all_colormaps[ci];
-                        found = 1;
-                    }
-                }
-                if(!found)
-                {
-                    std::cerr << "Error: given color scheme not supported" << std::endl;
-                    colors::print_color_info();
-                    exit(1);
-                }
-                break;
-                */
-                
-            case 'x': // get the real value
+            case 'x':
+                // take the supplied real value
                 if(strlen(optarg) == 0)
                 {
                     std::cerr << "Error: no real number supplied" << std::endl;
                     exit(1);
                 }
-                init_real = atof(optarg); // can't errcheck because we accept sub-zero nums
+
+                // set the real (no checking, bad)
+                init_real = atof(optarg);
                 break;
                 
-            case 'y': // get the imag value
+            case 'y':
+                // get the supplied imag value
                 if(strlen(optarg) == 0)
                 {
                     std::cerr << "Error: no imaginary number supplied" << std::endl;
                     exit(1);
                 }
+
+                // set the imag num (no checking, bad)
                 init_imag = atof(optarg);
                 break;
                 
-            case 'z': // get the zoom value
+            case 'z':
+                // get the zoom value
                 if(strlen(optarg) == 0)
                 {
                     std::cerr << "Error: no zoom value given" << std::endl;
                     exit(1);
                 }
+
+                // magnification can be checked as to prevent zeroes
                 magnification = atof(optarg);
                 if(magnification <= 0.0)
                 {
@@ -243,18 +252,19 @@ namespace opts
                 }
                 break;
                 
-            case 'o': // get the file name to use
+            case 'o':
+                // get the file name and bind it
                 if(strlen(optarg) == 0)
                 {
                     std::cerr << "Error: no file path supplied" << std::endl;
                     exit(1);
                 }
-                // implement code to transfer char* to a std::string type
-                // store the std::string type in the Settings for later usage
+
+                // TODO: transfer char* to a std::string type
                 break;
             }
 
-        // Return the pointer to the new object allocated by RAII
+        // Return a new Settings object by value 
         return Settings(
             verbose,
             random,
@@ -262,6 +272,19 @@ namespace opts
             init_imag,
             magnification,
             &reso::all[selected_reso]
+            );
+    }
+
+    Settings jparse(int argc, char** argv)
+    {
+
+        return Settings(
+            1,
+            1,
+            1.0,
+            1.0,
+            1.0,
+            &reso::all[0]
             );
     }
     

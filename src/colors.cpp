@@ -1,3 +1,10 @@
+/*
+ * colors.cpp
+ *
+ * Library for handling color shading and interpolation,
+ * as well as ensuring data passed through is the proper type
+ */
+
 #include <iostream>
 #include <cstdint>
 #include "include/colors.h"
