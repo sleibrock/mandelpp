@@ -7,7 +7,7 @@ namespace opts
 {
 
     // Mandelbrot ascii art for -h(elp)
-    const char* mandel_art[ASCII_LINES] =
+    const char* mandel_art[] =
     {
         "                  .      ",
         "               ..***.    ",
@@ -21,7 +21,7 @@ namespace opts
     };
 
     // Julia ascii art for -h(elp)
-    const char* julia_art[ASCII_LINES] =
+    const char* julia_art[] =
     {
         "                         ",
         "                         ",
@@ -39,7 +39,7 @@ namespace opts
     * getopt_long arguments
     * 0 - no_arg, 1 - mandatory, 2 - arg required
     */
-    const struct option mlong_opts[NUM_COMMANDS] =
+    const struct option mlong_opts[] =
     {
         {"size",    2,    0, 's'},
         {"real",    2,    0, 'x'},
@@ -58,7 +58,7 @@ namespace opts
     * help messages for each command
     */
     const char* mshort_opts = "s:x:y:o:c:z:vhr";
-    const char* moption_help[NUM_COMMANDS] =
+    const char* moption_help[] =
     {
         "sets the target resolution of the render",
         "sets the initial real value to use",
@@ -130,7 +130,11 @@ namespace opts
         std::cout << "Increments:        " <<     inc_re << "x" <<      inc_im << std::endl;
         std::cout << "Magnification:     " <<       zoom <<                       std::endl;
     }
+
     
+    /*
+     * Print out the Mandelbrot program commands
+     */
     void print_mandel_info()
     {
         for(uint32_t a=0; a < ASCII_LINES; a++)
@@ -141,12 +145,26 @@ namespace opts
             std::cout << "  --" << mlong_opts[h].name << " " << moption_help[h] << std::endl;
     }
 
+    
+    /*
+     * Print out the Julia program commands
+     */
     void print_julia_info()
     {
+        for(uint32_t a=0; a < ASCII_LINES; a++)
+            std::cout << julia_art[a] << std::endl;
+
+        std::cout << std::endl << "Usage: julia [OPTION]..." << std::endl;
+        for(uint32_t h=0; h < NUM_COMMANDS-1; h++)
+            std::cout << "  --" << mlong_opts[h].name << " " moption_help[h] << std::endl;
 
     }
     
-    
+    /*
+     * Arg-parsing utility for the Mandelbrot program
+     * Specific to Mandelbrot because of the differences
+     * Between the two programs
+     */
     Settings mparse(int argc, char** argv)
     {
         // values used during the getopts phase
@@ -275,6 +293,10 @@ namespace opts
             );
     }
 
+
+    /*
+     * Julia-specific version of mparse (similar code, different opts)
+     */
     Settings jparse(int argc, char** argv)
     {
 

@@ -24,10 +24,13 @@
 #include "colors.h"
 
 #define PROGRAM_VERSION        0.1
+
+// Adjust these constants if you need more commands
 #define NUM_COMMANDS            10
 #define M_COMMANDS              10
 #define J_COMMANDS              10
 #define ASCII_LINES              9
+
 #define DEFAULT_ZOOM           0.5
 #define DEFAULT_RE            -0.7
 #define DEFAULT_IM             0.0
@@ -41,15 +44,15 @@ namespace opts
 {
     // Different arrays will have to be made for
     // the Julia and Mandelbrot programs
-    extern const        char*    mandel_art[ASCII_LINES];
-    extern const struct option   mlong_opts[M_COMMANDS];
+    extern const        char*    mandel_art[];
+    extern const struct option   mlong_opts[];
     extern const        char*   mshort_opts;
-    extern const        char*  moption_help[M_COMMANDS];
+    extern const        char*  moption_help[];
 
-    extern const        char*     julia_art[ASCII_LINES];
-    extern const struct option   jlong_opts[J_COMMANDS];
-    extern const        char*   jshort_opts[J_COMMANDS];
-    extern const        char*  joption_help[J_COMMANDS]; 
+    extern const        char*     julia_art[];
+    extern const struct option   jlong_opts[];
+    extern const        char*   jshort_opts[];
+    extern const        char*  joption_help[]; 
 
     void print_mandel_info();
     void print_julia_info();

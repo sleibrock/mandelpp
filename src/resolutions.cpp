@@ -6,12 +6,10 @@
 #include <iostream>
 #include "include/resolutions.h"
 
-#define RESOLUTION_COUNT 23
-
 
 namespace reso
 {
-    const rect_t all[RESOLUTION_COUNT] =
+    const rect_t all[] =
     {
         // standard resolution outputs
         {"480p",       640,    480},

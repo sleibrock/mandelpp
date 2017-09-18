@@ -10,7 +10,7 @@
 #ifndef _RESOLUTION_H
 #define _RESOLUTION_H
 
-
+#define RESOLUTION_COUNT 23
 
 namespace reso
 {
