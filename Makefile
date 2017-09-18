@@ -5,12 +5,27 @@ CXX=g++
 CXXFLAGS=-O3 -Wall -std=gnu++11 -fdiagnostics-color
 LIBS=
 LDFLAGS=
-
 RM=rm -f
 MKD=mkdir -p
-
 S=src
 O=obj
+
+# Check if GMP exists in the compiler library
+# (not 100% perfect or portable (yet))
+GMPC=$(CXX) -lgmp
+GMPXX=$(CXX) -lgmpxx
+
+@_=$(shell $(CXX) -lgmp)
+EXIT_CODE=$$?
+ifeq ($EXIT_CODE,0)
+	LIBS=$(LIBS) -lgmp
+endif
+
+@_=$(shell $(CXX) -lgmpxx)
+EXIT_CODE=$$?
+ifeq ($EXIT_CODE,0)
+	LIBS=$(LIBS) -lgmpxx
+endif
 
 # List all objects shared between all programs
 # These objects serve their data and functions to be linked by
@@ -25,6 +40,15 @@ MANDEL=mandelbrot
 JULIA=julia
 
 all: build
+
+debug:
+	@echo "Compiler: $(CXX)"
+	@echo "$(shell $(CXX) --version)"
+	@echo "Flags: $(CXXLAGS)"
+	@echo "Libs: $(LIBS)"
+	@echo "LD flags: $(LDFLAGS)"
+
+verbose: debug $(MANDEL) $(JULIA)
 
 build: $(MANDEL) $(JULIA)
 
@@ -44,7 +68,7 @@ $(MANDEL): $(MOBJS)
 # Object compilation rule
 $(O)/%.o: $(S)/%.cpp | $(O)
 	@echo "[COMPILE] Compiling '$<' ..."
-	@$(CXX) $(CXXFLAGS) -o $@ -c $<
+	@$(CXX) $(CXXFLAGS) -o $@ -c $< $(LIBS)
 
 # Set up the object folder if it doesn't exist
 $(O):
