@@ -18,7 +18,6 @@ int main(int argc, char** argv)
 {
     srand(time(0));
     opts::Settings rs = opts::jparse(argc, argv);
-
     render::julia(rs);
     
     return 0;

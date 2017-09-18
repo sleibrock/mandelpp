@@ -51,7 +51,7 @@ namespace opts
 
     extern const        char*     julia_art[];
     extern const struct option   jlong_opts[];
-    extern const        char*   jshort_opts[];
+    extern const        char*   jshort_opts;
     extern const        char*  joption_help[]; 
 
     void print_mandel_info();

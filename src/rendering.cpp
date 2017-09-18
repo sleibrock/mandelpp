@@ -8,7 +8,10 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <functional>
 
+#include "include/rendering.h"
 #include "include/complex.h"
 #include "include/opts.h"
 
@@ -44,14 +47,16 @@ namespace render
 #else
         while(z.length2() < THRESHOLD && count++ < MAX_ITERS)
         {
-            z = (z*z) + c;
+            // avoid object creation by using arith-assign
+            z *= z;
+            z += c;
         }
 #endif
 
         return count;
     }
 
-    double iterate_j(Cmp& z, const Cmp& c)
+    double iterate_j(Cmp& z, const Cmp& c, const JFunc& jf)
     {
         double count = 0.0;
 
@@ -59,7 +64,7 @@ namespace render
 #else
         while(z.length2() < THRESHOLD && count++ < MAX_ITERS)
         {
-            z = (z*z*z) + c;
+            z = jf(z, c);
         }
         
 #endif
@@ -67,29 +72,24 @@ namespace render
         return count;
     }
 
+
+    /*
+     * Main mandelbrot rendering function
+     * Accepts a Settings ref and renders
+     * the Mandelbrot set of f(z) = z^2 + c
+     */
     int mandelbrot(opts::Settings& s)
     {
         s.display_info();
 
-        double w = s.res->width;
-        double h = s.res->height;
-
+        uint32_t w = s.res->width;
+        uint32_t h = s.res->height;
         double init_re = s.topleft_x;
         double init_im = s.topleft_y;
-
-        double inc_re = s.inc_re;
-        double inc_im = s.inc_im;
-
+        double inc_re  = s.inc_re;
+        double inc_im  = s.inc_im;
         Cmp z(0, 0), c(init_re, init_im);
         Cmp xbump(inc_re, 0), ybump(0, inc_im);
-
-        /*
-    std::ofstream ofs("./output.ppm", std::ios::out | std::ios::binary);
-    ofs << "P6\n";
-    ofs << "#This is a Julia set image\n";
-    ofs << w << " " << h;
-    ofs << "\n255\n";
-        */
         std::ofstream* ofs = create_image("./mandelbrot.ppm", w, h);
 
         double i = 0;
@@ -113,16 +113,56 @@ namespace render
         }
 
         ofs->close();
-        
-
         return 0;
-
     }
 
+
+    /*
+     * Main Julia function
+     * Executes a given Julia function (anything)
+     * and renders the set
+     */
     int julia(opts::Settings& s)
     {
-        return 0;
+        s.display_info();
+        uint32_t w = s.res->width;
+        uint32_t h = s.res->height;
 
+        double init_re = s.topleft_x;
+        double init_im = s.topleft_y;
+        double inc_re = s.inc_re;
+        double inc_im = s.inc_im;
+        Cmp z(0, 0), c(init_re, init_im);
+        Cmp xbump(inc_re, 0), ybump(0, inc_im);
+
+        std::ofstream* ofs = create_image("./julia.ppm", w, h);
+
+        // create a vector of functions
+        std::vector<JFunc> v;
+        v.push_back([](Cmp z, Cmp c){ return (z*z) + c; });
+        JFunc picked = v[0];
+
+        double i, result;
+
+        for(uint32_t y=0; y < h; y++)
+        {
+            for(uint32_t x=0; x < w; x++)
+            {
+                z.real = 0.0;
+                z.imag = 0.0;
+
+                i = iterate_j(z, c, picked);
+
+                result = colors::flatten(i);
+                *ofs << result << result << result;
+                c += xbump;
+            }
+            c.real = init_re;
+            c += ybump;
+        }
+
+        ofs->close();
+        return 0;
     }
 
 }

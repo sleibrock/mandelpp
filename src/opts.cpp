@@ -71,6 +71,37 @@ namespace opts
         "shows this help screen",
         "",
     };
+
+
+    const struct option jlong_opts[] =
+    {
+        {"size",    2,    0, 's'},
+        {"real",    2,    0, 'x'},
+        {"imag",    2,    0, 'y'},
+        {"output",  2,    0, 'o'},
+        {"colors",  2,    0, 'c'},
+        {"zoom",    2,    0, 'z'},
+        {"random",  0,    0, 'r'},
+        {"verbose", 0,    0, 'v'},
+        {"help",    0,    0, 'h'},
+        {NULL,      0, NULL,   0}
+    };
+
+
+    const char* jshort_opts = "s:x:y:o:c:z:vhr";
+    const char* joption_help[] =
+    {
+        "sets the target resolution of the output image",
+        "sets the initial Constant real value to use",
+        "sets the initial Constant imaginary value to use",
+        "tells the program what name to use for the output file",
+        "informs the program what color map to use",
+        "sets the zoom/magnification level",
+        "selects a random Constant variable to use",
+        "the program will display more text during runtime",
+        "shows this help screen",
+        "",
+    };
     
     
     Settings::Settings(uint8_t v, uint8_t r, double ir, double ii, double z, const reso::rect_t* out)
@@ -156,7 +187,7 @@ namespace opts
 
         std::cout << std::endl << "Usage: julia [OPTION]..." << std::endl;
         for(uint32_t h=0; h < NUM_COMMANDS-1; h++)
-            std::cout << "  --" << mlong_opts[h].name << " " moption_help[h] << std::endl;
+            std::cout << "  --" << mlong_opts[h].name << " " << moption_help[h] << std::endl;
 
     }
     
@@ -300,13 +331,129 @@ namespace opts
     Settings jparse(int argc, char** argv)
     {
 
+                // values used during the getopts phase
+        int c;
+        int found        = 0;
+        int option_index = 0;
+    
+        // values to use in the struct (adjusted by the getopts args)
+        uint8_t verbose       =            0;
+        uint8_t random        =            0;
+        double  init_real     =   DEFAULT_RE;
+        double  init_imag     =   DEFAULT_IM;
+        double  magnification = DEFAULT_ZOOM; // 0.5 will double the unit rect range
+
+        //char*  fname; //strmcpy to this address from the getopt loop
+        uint32_t selected_reso = 0;
+        
+        // begin getopts parsing
+        while ((c = getopt_long(argc, argv, mshort_opts, mlong_opts, &option_index)) != -1)
+            switch(c)
+            {
+            case 'v':
+                // verbosity switch
+                verbose = 1;
+                break;
+                
+            case 'h': 
+                // print help and quit
+                print_julia_info();
+                exit(0);
+                break;
+                
+            case 'r':
+                // enable random mode
+                random = 1;
+                break;
+                
+            case 's':
+                // set the resolution rect from ones available
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "No size given" << std::endl;
+                    exit(1);
+                }
+
+                // linear search to find the supplied reso
+                found = 0;
+                for(uint32_t ri=0; ri < RESOLUTION_COUNT; ri++)
+                {
+                    if(strcmp(reso::all[ri].name, optarg) == 0)
+                    {
+                        selected_reso = ri;
+                        found = 1;
+                    }
+                }
+
+                if(!found)
+                {
+                    std::cerr << "Error: given resolution not supported" << std::endl;
+                    reso::print_all();
+                    exit(1);
+                }
+                break;
+                
+            case 'x':
+                // take the supplied real value
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "Error: no real number supplied" << std::endl;
+                    exit(1);
+                }
+
+                // set the real (no checking, bad)
+                init_real = atof(optarg);
+                break;
+                
+            case 'y':
+                // get the supplied imag value
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "Error: no imaginary number supplied" << std::endl;
+                    exit(1);
+                }
+
+                // set the imag num (no checking, bad)
+                init_imag = atof(optarg);
+                break;
+                
+            case 'z':
+                // get the zoom value
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "Error: no zoom value given" << std::endl;
+                    exit(1);
+                }
+
+                // magnification can be checked as to prevent zeroes
+                magnification = atof(optarg);
+                if(magnification <= 0.0)
+                {
+                    std::cerr << "Error: negative or invalid zoom given" << std::endl;
+                    exit(1);
+                }
+                break;
+                
+            case 'o':
+                // get the file name and bind it
+                if(strlen(optarg) == 0)
+                {
+                    std::cerr << "Error: no file path supplied" << std::endl;
+                    exit(1);
+                }
+
+                // TODO: transfer char* to a std::string type
+                break;
+            }
+
+        // Return a new Settings object by value 
         return Settings(
-            1,
-            1,
-            1.0,
-            1.0,
-            1.0,
-            &reso::all[0]
+            verbose,
+            random,
+            init_real,
+            init_imag,
+            magnification,
+            &reso::all[selected_reso]
             );
     }
     

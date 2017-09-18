@@ -148,8 +148,10 @@ Cmp& Cmp::operator-=(const Cmp& other)
  */
 Cmp& Cmp::operator*=(const Cmp& other)
 {
-    real = (real * other.real) - (imag * other.imag);
-    imag = (imag * other.real) + (real * other.imag);
+    // store one num temporarily to avoid affecting the other
+    double r = (real * other.real) - (imag * other.imag);
+    imag     = (imag * other.real) + (real * other.imag);
+    real     = r;
     return *this;
 }
 
@@ -159,9 +161,11 @@ Cmp& Cmp::operator*=(const Cmp& other)
  */
 Cmp& Cmp::operator/=(const Cmp& other)
 {
-    double denom = (other.real * other.real) + (other.imag * other.imag);
-    real = ((real * other.real) + (imag * other.imag)) / denom;
-    imag = ((imag * other.real) - (real * other.imag)) / denom;
+    // store one side again to avoid conflicts
+    double d = (other.real * other.real) + (other.imag * other.imag);
+    double r = ((real * other.real) + (imag * other.imag)) / d;
+    imag     = ((imag * other.real) - (real * other.imag)) / d;
+    real = r;
     return *this;
 }
 
