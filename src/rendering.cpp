@@ -16,7 +16,7 @@
 #include "include/opts.h"
 
 #define MAX_ITERS 255.0
-#define THRESHOLD 4.0
+#define THRESHOLD 30.0
 #define LOG2      0.6931471805599453
 
 
@@ -58,10 +58,12 @@ namespace render
 
     double iterate_j(Cmp& z, const Cmp& c, const JFunc& jf)
     {
+        std::cout << "Entering function" << std::endl;
         double count = 0.0;
 
 #ifdef DGMP
 #else
+        std::cout << "Inside the macro" << std::endl;
         while(z.length2() < THRESHOLD && count++ < MAX_ITERS)
         {
             z = jf(z, c);
@@ -132,7 +134,12 @@ namespace render
         double init_im = s.topleft_y;
         double inc_re = s.inc_re;
         double inc_im = s.inc_im;
-        Cmp z(0, 0), c(init_re, init_im);
+
+        // example constants to use for C
+        double c_re = 0.279;
+        double c_im = 0.0;
+        
+        Cmp z(0, 0), c(c_re, c_im), pos(init_re, init_im);
         Cmp xbump(inc_re, 0), ybump(0, inc_im);
 
         std::ofstream* ofs = create_image("./julia.ppm", w, h);
@@ -148,8 +155,8 @@ namespace render
         {
             for(uint32_t x=0; x < w; x++)
             {
-                z.real = 0.0;
-                z.imag = 0.0;
+                z.real = pos.real;
+                z.imag = pos.imag;
 
                 i = iterate_j(z, c, picked);
 
@@ -157,8 +164,8 @@ namespace render
                 *ofs << result << result << result;
                 c += xbump;
             }
-            c.real = init_re;
-            c += ybump;
+            pos.real = init_re;
+            pos += ybump;
         }
 
         ofs->close();

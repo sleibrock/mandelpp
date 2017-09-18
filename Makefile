@@ -44,9 +44,10 @@ all: build
 debug:
 	@echo "Compiler: $(CXX)"
 	@echo "$(shell $(CXX) --version)"
-	@echo "Flags: $(CXXLAGS)"
+	@echo "Flags: $(CXXFLAGS)"
 	@echo "Libs: $(LIBS)"
 	@echo "LD flags: $(LDFLAGS)"
+	@echo "Objects: $(COREOBJS)"
 
 verbose: debug $(MANDEL) $(JULIA)
 
