@@ -1,17 +1,17 @@
 # Mandelbrot and Julia Set Generators
 
-`mandelpp` is a project aimed at creating high-quality Mandelbrot and Julia set images. It is currently written in C++ for performance.
+`mandelpp` is a project aimed at creating high-quality Mandelbrot and Julia set images. It is currently written in C++ for performance. There are no dependencies other than a C++11 supported compiler. The project aims to support GNU Multiprecision, but it's not required to compile.
 
 Usage:
 ```
--h, --help     Print out these options
--s, --size     Select a resolution size to use
--x, --real     Set the initial real value
--y, --imag     Set the initial imaginary value
--c, --colors   Set which color gradient to use
--z, --zoom     Set the zoom level
--r, --random   Enable random point/zoom selection
--v, --verbose  Program will print more text at runtime 
+-h --help     Print out these options
+-s --size     Select a resolution size to use
+-x --real     Set the initial real value
+-y --imag     Set the initial imaginary value
+-c --colors   Set which color gradient to use
+-z --zoom     Set the zoom level
+-r --random   Enable random point/zoom selection
+-v --verbose  Program will print more text at runtime
 ```
 
 # Examples
