@@ -16,36 +16,40 @@
 #include "include/opts.h"
 
 #define MAX_ITERS 255.0
-#define THRESHOLD 30.0
+#define M_BREAKOUT 4.0
+#define J_BREAKOUT 100.0
+#define THRESHOLD 100.0
 #define LOG2      0.6931471805599453
 
 
 namespace render
 {
-
     /*
      * Create an ofstream image object and return the pointer
      * for us to use in the rendering programs
      */
-    std::ofstream* create_image(std::string name, uint32_t w, uint32_t h)
+    std::ofstream* create_image(std::string name, opts::Settings& s)
     {
         std::ofstream* ofs;
         ofs = new std::ofstream(name, std::ios::out | std::ios::binary);
-
         *ofs << "P6\n";
-        *ofs << "#This is a comment\n";
-        *ofs << w << " " << h;
+        *ofs << "#Real: " << s.topleft_x << ", Imag: " << s.topleft_y << "\n";
+        *ofs << s.res->width << " " << s.res->height;
         *ofs << "\n255\n";
-
         return ofs;
     }
-    
+
+
+    /*
+     * Iterate a given point z with constant C
+     * to create the Mandelbrot set (z^2 + c)
+     */
     double iterate_m(Cmp& z, const Cmp& c)
     {
         double count = 0.0;
 #ifdef DGMP
 #else
-        while(z.length2() < THRESHOLD && count++ < MAX_ITERS)
+        while(z.length2() < M_BREAKOUT && count++ < MAX_ITERS)
         {
             // avoid object creation by using arith-assign
             z *= z;
@@ -56,15 +60,18 @@ namespace render
         return count;
     }
 
+
+    /*
+     * Iterate a given z-point with constant C
+     * and an assigned Julia set function
+     */
     double iterate_j(Cmp& z, const Cmp& c, const JFunc& jf)
     {
-        std::cout << "Entering function" << std::endl;
         double count = 0.0;
 
 #ifdef DGMP
 #else
-        std::cout << "Inside the macro" << std::endl;
-        while(z.length2() < THRESHOLD && count++ < MAX_ITERS)
+        while(z.length2() < J_BREAKOUT && count++ < MAX_ITERS)
         {
             z = jf(z, c);
         }
@@ -92,7 +99,7 @@ namespace render
         double inc_im  = s.inc_im;
         Cmp z(0, 0), c(init_re, init_im);
         Cmp xbump(inc_re, 0), ybump(0, inc_im);
-        std::ofstream* ofs = create_image("./mandelbrot.ppm", w, h);
+        std::ofstream* ofs = create_image("./mandelbrot.ppm", s);
 
         double i = 0;
         uint8_t result = 0;
@@ -127,29 +134,34 @@ namespace render
     int julia(opts::Settings& s)
     {
         s.display_info();
-        uint32_t w = s.res->width;
-        uint32_t h = s.res->height;
+        uint32_t w     = s.res->width;
+        uint32_t h     = s.res->height;
 
         double init_re = s.topleft_x;
         double init_im = s.topleft_y;
-        double inc_re = s.inc_re;
-        double inc_im = s.inc_im;
+        double inc_re  = s.inc_re;
+        double inc_im  = s.inc_im;
 
         // example constants to use for C
-        double c_re = 0.279;
-        double c_im = 0.0;
+        double c_re    = -0.8;
+        double c_im    = 0.156;
         
-        Cmp z(0, 0), c(c_re, c_im), pos(init_re, init_im);
+        Cmp z(0, 0);
+        Cmp c(c_re, c_im);
+        Cmp pos(init_re, init_im);
         Cmp xbump(inc_re, 0), ybump(0, inc_im);
 
-        std::ofstream* ofs = create_image("./julia.ppm", w, h);
+        std::ofstream* ofs = create_image("./julia.ppm", s);
 
-        // create a vector of functions
+        // create a vector of functions (TODO: do this part better)
         std::vector<JFunc> v;
-        v.push_back([](Cmp z, Cmp c){ return (z*z) + c; });
+        v.push_back([](Cmp z, Cmp c){ return (z*z)   + c; });
+        v.push_back([](Cmp z, Cmp c){ return (z*z*z) + c; });
+
         JFunc picked = v[0];
 
-        double i, result;
+        double i = 0.0;
+        uint8_t result = 0;
 
         for(uint32_t y=0; y < h; y++)
         {
@@ -162,7 +174,7 @@ namespace render
 
                 result = colors::flatten(i);
                 *ofs << result << result << result;
-                c += xbump;
+                pos += xbump;
             }
             pos.real = init_re;
             pos += ybump;
@@ -171,7 +183,6 @@ namespace render
         ofs->close();
         return 0;
     }
-
 }
 
 // end

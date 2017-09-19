@@ -31,6 +31,7 @@ namespace colors
         return (1.0 - t) * a + t * b;   
     }
     
+
     /*
     *  Convert a double to a uint8_t type for writing to file
     */
