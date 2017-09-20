@@ -18,7 +18,7 @@ class Cmp
 public:
 
 #ifdef DGMP
-    mpf_t real, imag;
+    mpf_t real, imag, abs_value;
 #else
     double real, imag;
 #endif

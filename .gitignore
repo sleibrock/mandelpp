@@ -37,3 +37,10 @@
 
 # swap files
 *.swp
+
+# emacs files
+/#*/#
+
+# target executables (non-windows)
+mandelbrot
+julia

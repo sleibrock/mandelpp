@@ -12,7 +12,35 @@
 
 #ifdef DGMP
 /*
+ * GMP code must be handled differently since every mpf_t
+ * is a struct, and allocations must be handled very carefully.
+ * Instead of doing tons of pass-by-value/refs, computations
+ * should instead mutate an exterior mpf_t pointer so that
+ * initializing and destructuring mpf_t's is not a thing
+ * the Complex class should have to do.
  *
+ * It is better to avoid lots and lots of inits/destructs
+ * as to avoid malloc overhead.
+ * 
+ * Operator overloading will possibly not work as the return
+ * types will not be similar since we are not doing simple
+ * return by values/refs/etc. GMP types have to be carefully
+ * handled.
+ *
+ * The overall Complex class API may be different because of
+ * how GMP types have to be handled. Rudimentary things
+ * like less-than or absolute value will be a lot different
+ * in the GMP version of the class.
+ *
+ * GOAL: Complex Class contains two mpf_t types representing
+ *       the real and imaginary values of a Complex number.
+ *       Arithmetic results should be tossed to an exterior
+ *       mpf_t type for better performance
+ */
+
+/*
+ * Initialize two mpf_t types inside of the class
+ * and set them to zero
  */
 Cmp::Cmp()
 {
@@ -20,27 +48,61 @@ Cmp::Cmp()
 
 
 /*
- *
+ * Init two mpf_t types and set them to whatever the given value is
  */
 Cmp::Cmp(double value)
 {
 }
 
 /*
- *
+ * Init two mpf_t types and set them to the supplied args
  */
 Cmp::Cmp(double r, double i)
 {
 }
 
 /*
- *
+ * Destroy the two mpf_t types by destructuring them with
+ * the respective mpf_t destruction methods in libgmp
  */
 Cmp::~Cmp()
 {
 
 }
-#else
+
+/*
+ * Add some complex number to our current one
+ */
+void Cmp::add(Cmp& other)
+{
+}
+
+/*
+ * Subtract some complex number from our current one
+ */
+void Cmp::sub(Cmp& other)
+{
+}
+
+/*
+ * Multiply our mpf_t types together on the current object
+ */
+void Cmp::mul(Cmp& other)
+{
+}
+
+/*
+ * Divide our mpf_t types in the current object
+ */
+void Cmp::div(Cmp& other)
+{
+}
+
+void Cmp::length2(mpf_t* res)
+{
+}
+
+#else // all non-GMP code goes below this line
 
 /*
  * No-value constructor
@@ -187,10 +249,6 @@ Cmp Cmp::conjugate()
  * involve calculating square roots
  */
 #ifdef DGMP
-void Cmp::length2(mpf_t* res)
-{
-
-}
 #else
 double Cmp::length2()
 {
