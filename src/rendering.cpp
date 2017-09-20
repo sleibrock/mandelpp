@@ -14,12 +14,14 @@
 #include "include/rendering.h"
 #include "include/complex.h"
 #include "include/opts.h"
+#include "include/functions.h"
 
-#define MAX_ITERS 255.0
+// constants to use
+// Julia has a higher breakout range than Mandel
+#define MAX_ITERS  255.0
 #define M_BREAKOUT 4.0
 #define J_BREAKOUT 100.0
-#define THRESHOLD 100.0
-#define LOG2      0.6931471805599453
+#define LOG2       0.6931471805599453
 
 
 namespace render
@@ -65,7 +67,7 @@ namespace render
      * Iterate a given z-point with constant C
      * and an assigned Julia set function
      */
-    double iterate_j(Cmp& z, const Cmp& c, const JFunc& jf)
+    double iterate_j(Cmp& z, const Cmp& c, const funcs::JFunc_t& jf)
     {
         double count = 0.0;
 
@@ -146,19 +148,15 @@ namespace render
         double c_re    = -0.8;
         double c_im    = 0.156;
         
-        Cmp z(0, 0);
-        Cmp c(c_re, c_im);
-        Cmp pos(init_re, init_im);
-        Cmp xbump(inc_re, 0), ybump(0, inc_im);
+        Cmp       z(0, 0);
+        const Cmp c(c_re, c_im);
+        Cmp       pos(init_re, init_im);
+        Cmp       xbump(inc_re, 0), ybump(0, inc_im);
 
         std::ofstream* ofs = create_image("./julia.ppm", s);
 
-        // create a vector of functions (TODO: do this part better)
-        std::vector<JFunc> v;
-        v.push_back([](Cmp z, Cmp c){ return (z*z)   + c; });
-        v.push_back([](Cmp z, Cmp c){ return (z*z*z) + c; });
-
-        JFunc picked = v[0];
+        // pick a function from the pre-defined func pointers
+        const funcs::JFunc_t picked = funcs::all[0];
 
         double i = 0.0;
         uint8_t result = 0;

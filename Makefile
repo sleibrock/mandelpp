@@ -30,7 +30,7 @@ endif
 # List all objects shared between all programs
 # These objects serve their data and functions to be linked by
 # the individual programs as needed
-COREOBJS=$(addprefix $(O)/,opts.o colors.o resolutions.o complex.o rendering.o)
+COREOBJS=$(addprefix $(O)/,opts.o colors.o resolutions.o complex.o rendering.o functions.o)
 MOBJS=$(COREOBJS) $(O)/mandelbrot.o
 JOBJS=$(COREOBJS) $(O)/julia.o
 

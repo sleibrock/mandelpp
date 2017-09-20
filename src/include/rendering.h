@@ -7,6 +7,7 @@
 
 #include "complex.h"
 #include "opts.h"
+#include "functions.h"
 
 namespace render
 {
@@ -16,7 +17,7 @@ namespace render
     
     std::ofstream* create_image(std::string, opts::Settings&);
     double iterate_m(Cmp&, const Cmp&);
-    double iterate_j(Cmp&, const Cmp&, const JFunc&);
+    double iterate_j(Cmp&, const Cmp&, const funcs::JFunc_t&);
     int mandelbrot(opts::Settings&);
     int julia(opts::Settings&);
 }
