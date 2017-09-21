@@ -153,10 +153,12 @@ namespace render
         Cmp       pos(init_re, init_im);
         Cmp       xbump(inc_re, 0), ybump(0, inc_im);
 
+        funcs::print_all();
+
         std::ofstream* ofs = create_image("./julia.ppm", s);
 
         // pick a function from the pre-defined func pointers
-        const funcs::JFunc_t picked = funcs::all[0];
+        const funcs::JuliaFunc* picked = &funcs::all[0];
 
         double i = 0.0;
         uint8_t result = 0;
@@ -168,7 +170,7 @@ namespace render
                 z.real = pos.real;
                 z.imag = pos.imag;
 
-                i = iterate_j(z, c, picked);
+                i = iterate_j(z, c, picked->func);
 
                 result = colors::flatten(i);
                 *ofs << result << result << result;

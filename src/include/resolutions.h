@@ -22,7 +22,7 @@ namespace reso
         const char*  name;
         const uint32_t width;
         const uint32_t height;
-    } reso_t;
+    } rect_t;
     
     
     //extern const rect_t all[RESOLUTION_COUNT];
