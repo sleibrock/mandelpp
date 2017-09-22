@@ -1,19 +1,19 @@
 # Makefile to build all binaries
 # Binary 1: the Mandelbrot rendering program
 # Binary 2: the Julia set rendering program
-CXX=g++
-CXXFLAGS=-O3 -Wall -std=gnu++11 -fdiagnostics-color
-LIBS=
-LDFLAGS=
-RM=rm -f
-MKD=mkdir -p
-S=src
-O=obj
+CXX      =g++
+CXXFLAGS =-O3 -Wall -std=gnu++11 -fdiagnostics-color
+LIBS     =
+LDFLAGS  =
+RM       =rm -f
+MKD      =mkdir -p
+S        =src
+O        =obj
 
 # Check if GMP exists in the compiler library
 # (not 100% perfect or portable (yet))
-GMPC=$(CXX) -lgmp
-GMPXX=$(CXX) -lgmpxx
+GMPC     =$(CXX) -lgmp
+GMPXX    =$(CXX) -lgmpxx
 
 @_=$(shell $(CXX) -lgmp)
 EXIT_CODE=$$?
@@ -30,9 +30,15 @@ endif
 # List all objects shared between all programs
 # These objects serve their data and functions to be linked by
 # the individual programs as needed
-COREOBJS=$(addprefix $(O)/,opts.o colors.o resolutions.o complex.o rendering.o functions.o)
-MOBJS=$(COREOBJS) $(O)/mandelbrot.o
-JOBJS=$(COREOBJS) $(O)/julia.o
+COREOBJS  =$(addprefix $(O)/,opts.o \
+						     colors.o \
+                             resolutions.o \
+                             complex.o \
+                             rendering.o \
+                             functions.o)
+
+MOBJS     =$(COREOBJS) $(O)/mandelbrot.o
+JOBJS     =$(COREOBJS) $(O)/julia.o
 
 # The differente executable targets we wish to build
 # Each target must have their own <target>.cpp file with a main() function
@@ -48,21 +54,25 @@ debug:
 	@echo "Libs: $(LIBS)"
 	@echo "LD flags: $(LDFLAGS)"
 	@echo "Objects: $(COREOBJS)"
+	@echo ""
 
-verbose: debug $(MANDEL) $(JULIA)
+verbose: debug build
 
-build: $(MANDEL) $(JULIA)
+build: $(MANDEL) $(JULIA) _done
 
 rebuild: clean build
 
+_done:
+	@echo "[END] Finished building targets"
+
 # Julia linking rule
 $(JULIA): $(JOBJS)
-	@echo "[LINK] Linking '$(JULIA)' ..."
+	@echo "[LINK] Linking '$(JULIA)'..."
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(JOBJS) -o $(JULIA) $(LIBS)
 
 # Mandelbrot linking rule
 $(MANDEL): $(MOBJS)
-	@echo "[LINK] Linking '$(MANDEL)' ..."
+	@echo "[LINK] Linking '$(MANDEL)'..."
 	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(MOBJS) -o $(MANDEL) $(LIBS)
 
 
