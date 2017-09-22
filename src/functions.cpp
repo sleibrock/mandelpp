@@ -13,18 +13,21 @@ namespace funcs
     /*
      * A basic z^2 + c function
      */
-    Cmp _z_squared(Cmp& z, const Cmp& c)
+    void _z_squared(Cmp& z, const Cmp& c)
     {
-        return (z*z) + c;
+        z.mul(z);
+        z.add(c);
     }
 
 
     /*
      * A basic z^3 + c function
      */
-    Cmp _z_cubed(Cmp& z, const Cmp& c)
+    void _z_cubed(Cmp& z, const Cmp& c)
     {
-        return (z*z*z) + c;
+        z.mul(z);
+        z.mul(z);
+        z.add(c);
     }
 
     // defines all functions available for Julia Set rendering

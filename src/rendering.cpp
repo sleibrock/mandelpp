@@ -53,9 +53,8 @@ namespace render
 #else
         while(z.length2() < M_BREAKOUT && count++ < MAX_ITERS)
         {
-            // avoid object creation by using arith-assign
-            z *= z;
-            z += c;
+            z.mul(z);
+            z.add(c);
         }
 #endif
 
@@ -75,7 +74,7 @@ namespace render
 #else
         while(z.length2() < J_BREAKOUT && count++ < MAX_ITERS)
         {
-            z = jf(z, c);
+            jf(z, c);
         }
         
 #endif
@@ -117,10 +116,10 @@ namespace render
 
                 result = colors::flatten(i);
                 *ofs << result << result << result;
-                c += xbump;
+                c.add(xbump);
             }
             c.real = init_re;
-            c += ybump;
+            c.add(ybump);
         }
 
         ofs->close();
@@ -153,8 +152,6 @@ namespace render
         Cmp       pos(init_re, init_im);
         Cmp       xbump(inc_re, 0), ybump(0, inc_im);
 
-        funcs::print_all();
-
         std::ofstream* ofs = create_image("./julia.ppm", s);
 
         // pick a function from the pre-defined func pointers
@@ -174,10 +171,10 @@ namespace render
 
                 result = colors::flatten(i);
                 *ofs << result << result << result;
-                pos += xbump;
+                pos.add(xbump);
             }
             pos.real = init_re;
-            pos += ybump;
+            pos.add(ybump);
         }
 
         ofs->close();

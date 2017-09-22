@@ -7,8 +7,6 @@
 #ifndef _FUNCTIONS_H
 #define _FUNCTIONS_H
 
-#include <iostream>
-
 #include "complex.h"
 
 #ifdef DGMP
@@ -18,7 +16,7 @@ namespace funcs
 {
     extern const uint32_t JFUNC_COUNT;
 
-    typedef Cmp (*JFunc_t)(Cmp&, const Cmp&);
+    typedef void (*JFunc_t)(Cmp&, const Cmp&);
 
     typedef struct JuliaFunc
     {
@@ -26,8 +24,8 @@ namespace funcs
         const JFunc_t func;
     } JuliaFunc;
 
-    Cmp _z_squared(Cmp& z, const Cmp& c);
-    Cmp _z_cubed(Cmp& z, const Cmp& c);
+    void _z_squared(Cmp& z, const Cmp& c);
+    void _z_cubed(Cmp& z, const Cmp& c);
 
     void print_all();
 

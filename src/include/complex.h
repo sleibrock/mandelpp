@@ -10,17 +10,20 @@
 #ifndef _CMP_H
 #define _CMP_H
 
-#include <cmath>
+#include <cmath>     // c math library
 #include <iostream>
 
 class Cmp
 {
+private:
+    void _calc_abs();
+
 public:
 
 #ifdef DGMP
-    mpf_t real, imag, abs_value;
+    mpf_t real, imag, abs_value, _tmp;
 #else
-    double real, imag;
+    double real, imag, abs_value;
 #endif
 
     // inits / destructs
@@ -29,19 +32,19 @@ public:
     Cmp(double, double);
     ~Cmp();
 
-    // math ops
-    Cmp    operator+(const Cmp&);
-    Cmp    operator-(const Cmp&);
-    Cmp    operator*(const Cmp&);
-    Cmp    operator/(const Cmp&);
-
-    Cmp&   operator+=(const Cmp&);
-    Cmp&   operator-=(const Cmp&);
-    Cmp&   operator*=(const Cmp&);
-    Cmp&   operator/=(const Cmp&);
+    // math operations 
+    void add(double);
+    void sub(double);
+    void mul(double);
+    void div(double);
+    void add(const Cmp&);
+    void sub(const Cmp&);
+    void mul(const Cmp&);
+    void div(const Cmp&);
+    void neg();
 
     // methods
-    Cmp    conjugate();
+    Cmp  conjugate();
 
 #ifdef DGMP
     void   length2(mpf_t*);

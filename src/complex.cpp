@@ -10,7 +10,6 @@
 #include <iostream>
 #include "include/complex.h"
 
-#ifdef DGMP
 /*
  * GMP code must be handled differently since every mpf_t
  * is a struct, and allocations must be handled very carefully.
@@ -38,71 +37,6 @@
  *       mpf_t type for better performance
  */
 
-/*
- * Initialize two mpf_t types inside of the class
- * and set them to zero
- */
-Cmp::Cmp()
-{
-}
-
-
-/*
- * Init two mpf_t types and set them to whatever the given value is
- */
-Cmp::Cmp(double value)
-{
-}
-
-/*
- * Init two mpf_t types and set them to the supplied args
- */
-Cmp::Cmp(double r, double i)
-{
-}
-
-/*
- * Destroy the two mpf_t types by destructuring them with
- * the respective mpf_t destruction methods in libgmp
- */
-Cmp::~Cmp()
-{
-
-}
-
-/*
- * Add some complex number to our current one
- */
-void Cmp::add(Cmp& other)
-{
-}
-
-/*
- * Subtract some complex number from our current one
- */
-void Cmp::sub(Cmp& other)
-{
-}
-
-/*
- * Multiply our mpf_t types together on the current object
- */
-void Cmp::mul(Cmp& other)
-{
-}
-
-/*
- * Divide our mpf_t types in the current object
- */
-void Cmp::div(Cmp& other)
-{
-}
-
-void Cmp::length2(mpf_t* res)
-{
-}
-
-#else // all non-GMP code goes below this line
 
 /*
  * No-value constructor
@@ -139,96 +73,81 @@ Cmp::Cmp(double r, double i)
  */
 Cmp::~Cmp(){}
 
-Cmp Cmp::operator+(const Cmp& other)
-{
-    Cmp r;
-    r.real = real + other.real;
-    r.imag = imag + other.imag;
-    return r; 
-    
-}
 
-Cmp Cmp::operator-(const Cmp& other)
+void Cmp::add(const Cmp& other)
 {
-    Cmp r;
-    r.real = real - other.real;
-    r.imag = imag - other.imag;
-    return r;
-}
-
-/*
- * Complex multiplication
- * a+bi * c+di = (ac - bd) - (bc + ad)i
- */
-Cmp Cmp::operator*(const Cmp& other)
-{
-    Cmp r;
-    r.real = (real * other.real) - (imag * other.imag);
-    r.imag = (imag * other.real) + (real * other.imag);
-    return r;
+    real = real + other.real;
+    imag = imag + other.imag;
 }
 
 
-/*
- * Division op
- * (a+bi) / (c+di) = (ac + bd)/(c^2+d^2) + (bc - ad)/(c^2+d^2)
- */
-Cmp Cmp::operator/(const Cmp& other)
+void Cmp::sub(const Cmp& other)
 {
-    Cmp r;
-    double denom = (other.real * other.real) + (other.imag * other.imag);
-    r.real = ((real * other.real) + (imag * other.imag)) / denom;
-    r.imag = ((imag * other.real) - (real * other.imag)) / denom;
-    return r;
+    real = real - other.real;
+    imag = imag - other.imag;
 }
 
 
-/*
- * Addition assignment
- */
-Cmp& Cmp::operator+=(const Cmp& other)
-{
-    real += other.real;
-    imag += other.imag;
-    return *this;
-}
-
-
-/*
- * Subtraction assignment
- */
-Cmp& Cmp::operator-=(const Cmp& other)
-{
-    real -= other.real;
-    imag -= other.imag;
-    return *this;
-}
-
-
-/*
- * Multiplication assignment
- */
-Cmp& Cmp::operator*=(const Cmp& other)
+void Cmp::mul(const Cmp& other)
 {
     // store one num temporarily to avoid affecting the other
     double r = (real * other.real) - (imag * other.imag);
     imag     = (imag * other.real) + (real * other.imag);
     real     = r;
-    return *this;
+}
+
+
+void Cmp::div(const Cmp& other)
+{
+    // store one side again to avoid conflicts
+    double d = (other.real*other.real) + (other.imag*other.imag);
+    double r = ((real*other.real)+(imag*other.imag))/d;
+    imag     = ((imag*other.real)-(real*other.imag))/d;
+    real     = r;
+}
+
+/*
+ * Adds a double to the object's real value
+ * (in these cases we assume the given double
+ * can only be considered a Real value)
+ */
+void Cmp::add(double value)
+{
+    real = real + value; 
+}
+
+/*
+ * Subs a double from the object's real value
+ */
+void Cmp::sub(double value)
+{
+    real = real - value;
 }
 
 
 /*
- *
+ * Multiplies both properties by a scalar
  */
-Cmp& Cmp::operator/=(const Cmp& other)
+void Cmp::mul(double scalar)
 {
-    // store one side again to avoid conflicts
-    double d = (other.real * other.real) + (other.imag * other.imag);
-    double r = ((real * other.real) + (imag * other.imag)) / d;
-    imag     = ((imag * other.real) - (real * other.imag)) / d;
-    real = r;
-    return *this;
+    real = real * scalar;
+    imag = imag * scalar;
+}
+
+
+/*
+ * Divides both properties by a scalar
+ */
+void Cmp::div(double scalar)
+{
+    real = real / scalar;
+    imag = imag / scalar;
+}
+
+void Cmp::neg()
+{
+    real = -real;
+    imag = -imag;
 }
 
 
@@ -265,20 +184,5 @@ std::ostream& operator<<(std::ostream& fout, const Cmp& a)
     fout << "Complex(" << a.real << ", " << a.imag << ")";
     return fout;
 }
-
-#endif
-
-/*
-int main()
-{
-    Cmp a(-4, 2);
-    Cmp b(-3, 8);
-    Cmp c = a;
-    c += b;
-    std::cout << "Hello " << std::endl;
-    std::cout << "Result is " << c << std::endl;
-    return 0;
-}
-*/
 
 // end
