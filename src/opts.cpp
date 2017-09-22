@@ -5,6 +5,11 @@
 
 namespace opts
 {
+    // adjust these when you add more commands
+    const uint32_t  M_COMMANDS = 10;
+    const uint32_t  J_COMMANDS = 11;
+    const uint32_t ASCII_LINES = 9;
+
 
     // Mandelbrot ascii art for -h(elp)
     const char* mandel_art[] =
@@ -20,6 +25,7 @@ namespace opts
         "                  .      ",
     };
 
+
     // Julia ascii art for -h(elp)
     const char* julia_art[] =
     {
@@ -33,8 +39,8 @@ namespace opts
         "                         ",
         "                         ",
     };
-    
-    
+
+
     /*
     * getopt_long arguments
     * 0 - no_arg, 1 - mandatory, 2 - arg required
@@ -52,8 +58,8 @@ namespace opts
         {"help",    0,    0, 'h'},
         {NULL,      0, NULL,   0}
     };
-    
-    
+
+
     /*
     * help messages for each command
     */
@@ -75,20 +81,21 @@ namespace opts
 
     const struct option jlong_opts[] =
     {
-        {"size",    2,    0, 's'},
-        {"real",    2,    0, 'x'},
-        {"imag",    2,    0, 'y'},
-        {"output",  2,    0, 'o'},
-        {"colors",  2,    0, 'c'},
-        {"zoom",    2,    0, 'z'},
-        {"random",  0,    0, 'r'},
-        {"verbose", 0,    0, 'v'},
-        {"help",    0,    0, 'h'},
-        {NULL,      0, NULL,   0}
+        {"size",     2,    0, 's'},
+        {"real",     2,    0, 'x'},
+        {"imag",     2,    0, 'y'},
+        {"output",   2,    0, 'o'},
+        {"colors",   2,    0, 'c'},
+        {"function", 2,    0, 'f'},
+        {"zoom",     2,    0, 'z'},
+        {"random",   0,    0, 'r'},
+        {"verbose",  0,    0, 'v'},
+        {"help",     0,    0, 'h'},
+        {NULL,       0, NULL,   0}
     };
 
 
-    const char* jshort_opts = "s:x:y:o:c:z:vhr";
+    const char* jshort_opts = "s:x:y:o:c:f:z:vhr";
     const char* joption_help[] =
     {
         "sets the target resolution of the output image",
@@ -96,19 +103,20 @@ namespace opts
         "sets the initial Constant imaginary value to use",
         "tells the program what name to use for the output file",
         "informs the program what color map to use",
+        "sets the Julia function to render",
         "sets the zoom/magnification level",
         "selects a random Constant variable to use",
         "the program will display more text during runtime",
         "shows this help screen",
         "",
     };
-    
-    
+
+
     Settings::Settings(uint8_t v, uint8_t r, double ir, double ii, double z, const reso::rect_t* out)
     {
         verbose = v;
         random  = r;
-        
+
         // add a random mode here somewhere
         if(!random)
         {
@@ -122,37 +130,28 @@ namespace opts
             init_real = 0;
             init_imag = 0;
             zoom      = 1;
-            
         }
-        
         res = out;
-        
         double w   = double(res->width);
         double h   = double(res->height);
-        
         span_x     = ((w/h) * 0.5) * (1.0 / zoom);
         span_y     =          0.5  * (1.0 / zoom);
-        
         topleft_x  = init_real - span_x;
         topleft_y  = init_imag - span_y;
-        
         botright_x = init_real + span_x;
         botright_y = init_imag + span_y;
-        
         inc_re     = (fabs(topleft_x - botright_x)) * (1.0 / w);
         inc_im     = (fabs(topleft_y - botright_y)) * (1.0 / h);
-        
     }
-    
     void Settings::display_info()
     {
         if(!verbose)
             return;
-        
+
         // print some basic stuff
         if(random)
             std::cout << "*** Random mode enabled! ***" << std::endl;
-        
+
         std::cout << "Target resolution: " << res->width << "x" << res->height << std::endl;
         std::cout << "Desired point:     " <<  init_real << "x" <<   init_imag << std::endl;
         std::cout << "Spans:             " <<     span_x << "x" <<      span_y << std::endl;
@@ -162,7 +161,7 @@ namespace opts
         std::cout << "Magnification:     " <<       zoom <<                       std::endl;
     }
 
-    
+
     /*
      * Print out the Mandelbrot program commands
      */
@@ -171,12 +170,13 @@ namespace opts
         for(uint32_t a=0; a < ASCII_LINES; a++)
             std::cout << mandel_art[a] << std::endl;
 
+
         std::cout << std::endl << "Usage: mandelbrot [OPTION]..." << std::endl;
-        for(uint32_t h=0; h < NUM_COMMANDS-1; h++)
-            std::cout << "  --" << mlong_opts[h].name << " " << moption_help[h] << std::endl;
+        for(uint32_t h=0; h < M_COMMANDS-1; h++)
+            std::cout << "  --" << mlong_opts[h].name << ", " << moption_help[h] << std::endl;
     }
 
-    
+
     /*
      * Print out the Julia program commands
      */
@@ -186,11 +186,12 @@ namespace opts
             std::cout << julia_art[a] << std::endl;
 
         std::cout << std::endl << "Usage: julia [OPTION]..." << std::endl;
-        for(uint32_t h=0; h < NUM_COMMANDS-1; h++)
-            std::cout << "  --" << mlong_opts[h].name << " " << moption_help[h] << std::endl;
+        for(uint32_t h=0; h < J_COMMANDS-1; h++)
+            std::cout << "  --" << jlong_opts[h].name << ", " << joption_help[h] << std::endl;
 
     }
-    
+
+
     /*
      * Arg-parsing utility for the Mandelbrot program
      * Specific to Mandelbrot because of the differences
@@ -202,7 +203,7 @@ namespace opts
         int c;
         int found        = 0;
         int option_index = 0;
-    
+
         // values to use in the struct (adjusted by the getopts args)
         uint8_t verbose       =            0;
         uint8_t random        =            0;
@@ -212,7 +213,7 @@ namespace opts
 
         //char*  fname; //strmcpy to this address from the getopt loop
         uint32_t selected_reso = 0;
-        
+
         // begin getopts parsing
         while ((c = getopt_long(argc, argv, mshort_opts, mlong_opts, &option_index)) != -1)
             switch(c)
@@ -221,18 +222,18 @@ namespace opts
                 // verbosity switch
                 verbose = 1;
                 break;
-                
-            case 'h': 
+
+            case 'h':
                 // print help and quit
                 print_mandel_info();
                 exit(0);
                 break;
-                
+
             case 'r':
                 // enable random mode
                 random = 1;
                 break;
-                
+
             case 's':
                 // set the resolution rect from ones available
                 if(strlen(optarg) == 0)
@@ -259,7 +260,7 @@ namespace opts
                     exit(1);
                 }
                 break;
-                
+
             case 'x':
                 // take the supplied real value
                 if(strlen(optarg) == 0)
@@ -271,7 +272,7 @@ namespace opts
                 // set the real (no checking, bad)
                 init_real = atof(optarg);
                 break;
-                
+
             case 'y':
                 // get the supplied imag value
                 if(strlen(optarg) == 0)
@@ -283,7 +284,7 @@ namespace opts
                 // set the imag num (no checking, bad)
                 init_imag = atof(optarg);
                 break;
-                
+
             case 'z':
                 // get the zoom value
                 if(strlen(optarg) == 0)
@@ -300,7 +301,7 @@ namespace opts
                     exit(1);
                 }
                 break;
-                
+
             case 'o':
                 // get the file name and bind it
                 if(strlen(optarg) == 0)
@@ -313,7 +314,7 @@ namespace opts
                 break;
             }
 
-        // Return a new Settings object by value 
+        // Return a new Settings object by value
         return Settings(
             verbose,
             random,
@@ -335,7 +336,6 @@ namespace opts
         int c;
         int found        = 0;
         int option_index = 0;
-    
         // values to use in the struct (adjusted by the getopts args)
         uint8_t verbose       =            0;
         uint8_t random        =            0;
@@ -345,7 +345,7 @@ namespace opts
 
         //char*  fname; //strmcpy to this address from the getopt loop
         uint32_t selected_reso = 0;
-        
+
         // begin getopts parsing
         while ((c = getopt_long(argc, argv, mshort_opts, mlong_opts, &option_index)) != -1)
             switch(c)
@@ -354,18 +354,18 @@ namespace opts
                 // verbosity switch
                 verbose = 1;
                 break;
-                
-            case 'h': 
+
+            case 'h':
                 // print help and quit
                 print_julia_info();
                 exit(0);
                 break;
-                
+
             case 'r':
                 // enable random mode
                 random = 1;
                 break;
-                
+
             case 's':
                 // set the resolution rect from ones available
                 if(strlen(optarg) == 0)
@@ -392,7 +392,7 @@ namespace opts
                     exit(1);
                 }
                 break;
-                
+
             case 'x':
                 // take the supplied real value
                 if(strlen(optarg) == 0)
@@ -404,7 +404,7 @@ namespace opts
                 // set the real (no checking, bad)
                 init_real = atof(optarg);
                 break;
-                
+
             case 'y':
                 // get the supplied imag value
                 if(strlen(optarg) == 0)
@@ -416,7 +416,7 @@ namespace opts
                 // set the imag num (no checking, bad)
                 init_imag = atof(optarg);
                 break;
-                
+
             case 'z':
                 // get the zoom value
                 if(strlen(optarg) == 0)
@@ -433,7 +433,7 @@ namespace opts
                     exit(1);
                 }
                 break;
-                
+
             case 'o':
                 // get the file name and bind it
                 if(strlen(optarg) == 0)
@@ -446,7 +446,7 @@ namespace opts
                 break;
             }
 
-        // Return a new Settings object by value 
+        // Return a new Settings object by value
         return Settings(
             verbose,
             random,
@@ -456,5 +456,6 @@ namespace opts
             &reso::all[selected_reso]
             );
     }
-    
 }
+
+// end
