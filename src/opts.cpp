@@ -14,30 +14,30 @@ namespace opts
     // Mandelbrot ascii art for -h(elp)
     const char* mandel_art[] =
     {
-        "                  .      ",
-        "               ..***.    ",
-        "        .    .*******.   ",
-        "    .  .*.  .********.   ",
-        "   .*..***..********.    ",
-        "    .  .*.  .********.   ",
-        "        .    .*******.   ",
-        "               ..***.    ",
-        "                  .      ",
+        "-------------------------",
+        "|              ..***.   |",
+        "|       .    .*******.  |",
+        "|   .  .*.  .********.  |",
+        "|  .*..***..********.   |",
+        "|   .  .*.  .********.  |",
+        "|       .    .*******.  |",
+        "|              ..***.   |",
+        "-------------------------",
     };
 
 
     // Julia ascii art for -h(elp)
     const char* julia_art[] =
     {
-        "                         ",
-        "                         ",
-        "                         ",
-        "                         ",
-        "                         ",
-        "                         ",
-        "                         ",
-        "                         ",
-        "                         ",
+        "-------------------------",
+        "|                       |",
+        "|                       |",
+        "|                       |",
+        "|                       |",
+        "|                       |",
+        "|                       |",
+        "|                       |",
+        "-------------------------",
     };
 
 
@@ -188,7 +188,6 @@ namespace opts
         std::cout << std::endl << "Usage: julia [OPTION]..." << std::endl;
         for(uint32_t h=0; h < J_COMMANDS-1; h++)
             std::cout << "  --" << jlong_opts[h].name << ", " << joption_help[h] << std::endl;
-
     }
 
 
@@ -200,7 +199,7 @@ namespace opts
     Settings mparse(int argc, char** argv)
     {
         // values used during the getopts phase
-        int c;
+        int c            = 0;
         int found        = 0;
         int option_index = 0;
 
@@ -304,7 +303,7 @@ namespace opts
 
             case 'o':
                 // get the file name and bind it
-                if(strlen(optarg) == 0)
+                if(!strlen(optarg))
                 {
                     std::cerr << "Error: no file path supplied" << std::endl;
                     exit(1);
@@ -315,13 +314,10 @@ namespace opts
             }
 
         // Return a new Settings object by value
-        return Settings(
-            verbose,
-            random,
-            init_real,
-            init_imag,
-            magnification,
-            &reso::all[selected_reso]
+        return Settings
+            (
+                verbose, random, init_real,
+                init_imag, magnification, &reso::all[selected_reso]
             );
     }
 
@@ -332,16 +328,16 @@ namespace opts
     Settings jparse(int argc, char** argv)
     {
 
-                // values used during the getopts phase
-        int c;
-        int found        = 0;
-        int option_index = 0;
+        // values used during the getopts phase
+        int      c             =            0;
+        int      found         =            0;
+        int      option_index  =            0;
         // values to use in the struct (adjusted by the getopts args)
-        uint8_t verbose       =            0;
-        uint8_t random        =            0;
-        double  init_real     =   DEFAULT_RE;
-        double  init_imag     =   DEFAULT_IM;
-        double  magnification = DEFAULT_ZOOM; // 0.5 will double the unit rect range
+        uint8_t  verbose       =            0;
+        uint8_t  random        =            0;
+        double   init_real     =   DEFAULT_RE;
+        double   init_imag     =   DEFAULT_IM;
+        double   magnification = DEFAULT_ZOOM; // 0.5 will double the unit rect range
 
         //char*  fname; //strmcpy to this address from the getopt loop
         uint32_t selected_reso = 0;
@@ -425,6 +421,7 @@ namespace opts
                     exit(1);
                 }
 
+                
                 // magnification can be checked as to prevent zeroes
                 magnification = atof(optarg);
                 if(magnification <= 0.0)
@@ -447,13 +444,10 @@ namespace opts
             }
 
         // Return a new Settings object by value
-        return Settings(
-            verbose,
-            random,
-            init_real,
-            init_imag,
-            magnification,
-            &reso::all[selected_reso]
+        return Settings
+            (
+                verbose, random, init_real,
+                init_imag, magnification, &reso::all[selected_reso]
             );
     }
 }
