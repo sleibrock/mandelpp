@@ -1,5 +1,9 @@
 # Mandelbrot and Julia Set Generators
 
+## Archival Notice
+
+Due to low activity on this project for years, I will be archiving this project to a read-only state. I don't currently write a whole lot of C++, having moved onto Rust and Zig, but by preserving it I hope there is some left to be learned from the remaining code.
+
 `mandelpp` is a project aimed at creating high-quality Mandelbrot and Julia set images. It is currently written in C++.
 
 Things `mandelpp` does:
